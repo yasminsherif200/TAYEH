@@ -5,10 +5,16 @@ import Chat from './pages/Chat'
 function App() {
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/chat" element={<Chat />} />
-      </Routes>
+      <div style={{
+        maxWidth: '900px',
+        margin: '0 auto',
+        minHeight: '100vh',
+      }}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/chat" element={<Chat />} />
+        </Routes>
+      </div>
     </BrowserRouter>
   )
 }

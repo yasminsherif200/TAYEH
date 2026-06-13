@@ -17,7 +17,7 @@ function BottomNav() {
       left: '50%',
       transform: 'translateX(-50%)',
       width: '100%',
-      maxWidth: '640px',
+      maxWidth: '900px',
       backgroundColor: 'var(--color-background)',
       borderTop: '1px solid var(--color-outline-variant)',
       display: 'flex',
