@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { Compass } from 'lucide-react'
 
 function Header() {
   const navigate = useNavigate()
@@ -27,15 +28,16 @@ function Header() {
         TAYEH
       </span>
 
-      <button style={{
-        background: 'none',
-        border: 'none',
-        cursor: 'pointer',
-        color: 'var(--color-on-surface)',
-        fontSize: '20px',
-        padding: '4px',
-      }}>
-        ⊕
+      <button onClick={() => navigate('/chat')} 
+        style={{
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            color: 'var(--color-on-surface)',
+            fontSize: '20px',
+            padding: '4px',
+        }}>
+        <Compass size={22} />
       </button>
     </header>
   )

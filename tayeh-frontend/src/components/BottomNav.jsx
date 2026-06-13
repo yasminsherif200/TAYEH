@@ -1,12 +1,13 @@
 import { useNavigate, useLocation } from 'react-router-dom'
+import { House, Bot } from 'lucide-react'
 
 function BottomNav() {
   const navigate = useNavigate()
   const location = useLocation()
 
   const tabs = [
-    { label: 'Home', path: '/', icon: '⌂' },
-    { label: 'Assistant', path: '/chat', icon: '💬' },
+    { label: 'Home', path: '/', icon:  <House size={20} /> },
+    { label: 'Assistant', path: '/chat', icon: <Bot size={20} /> },
   ]
 
   return (
