@@ -1,0 +1,110 @@
+/*  Fonts  */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Colors */
+  --color-primary: #3e5219;
+  --color-on-primary: #ffffff;
+  --color-primary-container:#556b2f;
+  --color-on-primary-container: #d0eba1;
+
+  --color-secondary: #446464;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #c6e9e9;
+  --color-on-secondary-container: #4a6a6a;
+
+  --color-tertiary: #6a5e33;
+  --color-tertiary-container: #baaa79;
+
+  --color-background: #fbfbe2;
+  --color-surface: #fbfbe2;
+  --color-surface-container: #efefd7;
+  --color-surface-container-low:#f5f5dc;
+  --color-surface-container-high:#eaead1;
+
+  --color-on-surface: #1b1d0e;
+  --color-on-surface-variant: #45483c;
+  --color-outline: #75796b;
+  --color-outline-variant: #c5c8b8;
+
+  --color-error: #ba1a1a;
+
+  /* Shadows */
+  --shadow-sm:   0 1px 2px rgba(85, 107, 47, 0.08);
+  --shadow-md:   0 4px 8px rgba(85, 107, 47, 0.08);
+  --shadow-lg:   0 8px 16px rgba(85, 107, 47, 0.08);
+
+  /* Border Radius */
+  --radius-sm: 0.5rem;    /* 8px  */
+  --radius-md: 1rem;      /* 16px - standard cards */
+  --radius-lg: 1.5rem;    /* 24px - chat bubbles */
+  --radius-xl: 2rem;      /* 32px - direction cards */
+  --radius-full: 9999px;    /* pill - buttons */
+
+  /* Spacing */
+  --spacing-unit: 8px;
+  --spacing-mobile: 20px;
+  --spacing-gutter: 16px;
+  --spacing-gap: 12px;
+}
+
+/*  Base  */
+body {
+  font-family: 'Manrope', sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  font-size: 16px;
+  line-height: 24px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/*  Typography  */
+.display-lg {
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 56px;
+  letter-spacing: -0.02em;
+}
+
+.headline-lg {
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+}
+
+.headline-mobile {
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+}
+
+.title-md {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 28px;
+}
+
+.body-lg {
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 28px;
+}
+
+.body-md {
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 24px;
+}
+
+.label-sm {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+}
