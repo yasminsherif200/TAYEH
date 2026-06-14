@@ -3,11 +3,16 @@ import Header from '../components/Header'
 import BottomNav from '../components/BottomNav'
 import PlaceCard from '../components/PlaceCard'
 import clockTower from '../assets/clock-tower.jpg'
+import { GraduationCap } from 'lucide-react'
+import { School } from 'lucide-react'
+import cafeteria from '../assets/cafeteria.jpg'
+import library from '../assets/library.jpg'
+import atm from '../assets/atm.jpg'
 
 const places = [
-  { id: 1, name: 'Main Cafeteria', description: 'Student hub for meals', tag: 'cheap' },
-  { id: 2, name: 'Central Library', description: 'Central study space', tag: 'quiet' },
-  { id: 3, name: 'CIB ATM', description: 'Near Faculty of Arts', tag: 'convenient' },
+  { id: 1, name: 'Breakout Cafeteria', description: 'Student hub for meals', tag: 'cheap', image: cafeteria },
+  { id: 2, name: 'Central Library', description: 'Central study space', tag: 'quiet', image: library },
+  { id: 3, name: 'Banque Misr ATM', description: 'Near Faculty of Commerce', tag: 'convenient', image: atm },
 ]
 
 function Home() {
@@ -81,13 +86,13 @@ function Home() {
             color: 'var(--color-on-surface-variant)',
             fontFamily: 'JetBrains Mono',
           }}>
-            <span>🏛 Since 1908</span>
+            <span><School size={12}/> Since 1908</span>
             <span>•</span>
-            <span>⊕ Smart Campus</span>
+            <span><GraduationCap size={12} /> Smart Campus</span>
           </div>
         </section>
 
-        {/* ── Middle Section ── */}
+        {/*  Middle Section  */}
         <section style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
@@ -134,6 +139,8 @@ function Home() {
                 name={place.name}
                 description={place.description}
                 tag={place.tag}
+                image={place.image}
+                onClick={() => navigate('/chat', { state: { prefill: `Take me to "${place.name}"` } })}
               />
             ))}
           </div>
