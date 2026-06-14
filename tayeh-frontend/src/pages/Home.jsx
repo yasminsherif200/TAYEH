@@ -190,7 +190,7 @@ function Home() {
               maxWidth: '80%',
               lineHeight: '20px',
             }}>
-              Lost on campus? Same. But unlike you, I actually know where everything is. 🗺️ Ask me anything — gates, faculties, shortcuts, food — I got you.
+              Lost on campus? Same. But unlike you, I actually know where everything is. Ask me anything — gates, faculties, shortcuts, food — I got you.
             </div>
           </div>
 
