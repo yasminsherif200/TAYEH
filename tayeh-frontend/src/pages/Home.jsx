@@ -3,11 +3,11 @@ import Header from '../components/Header'
 import BottomNav from '../components/BottomNav'
 import PlaceCard from '../components/PlaceCard'
 import clockTower from '../assets/clock-tower.jpg'
-import { GraduationCap } from 'lucide-react'
-import { School } from 'lucide-react'
+import { GraduationCap, School } from 'lucide-react'
 import cafeteria from '../assets/cafeteria.jpg'
 import library from '../assets/library.jpg'
 import atm from '../assets/atm.jpg'
+import { useState } from 'react'
 
 const places = [
   { id: 1, name: 'Breakout Cafeteria', description: 'Student hub for meals', tag: 'cheap', image: cafeteria },
@@ -17,6 +17,12 @@ const places = [
 
 function Home() {
   const navigate = useNavigate()
+  const [input, setInput] = useState('')
+
+  const handleSend = () => {
+    if (!input.trim()) return
+    navigate('/chat', { state: { prefill: input, autoSend: true } })
+  }
 
   return (
     <div>
@@ -24,7 +30,7 @@ function Home() {
 
       <main style={{ padding: '0 20px 100px 20px' }}>
 
-        {/*  Hero Section  */}
+        {/* Hero Section */}
         <section style={{ textAlign: 'center', padding: '32px 0 24px 0' }}>
           <div style={{
             display: 'inline-block',
@@ -86,20 +92,19 @@ function Home() {
             color: 'var(--color-on-surface-variant)',
             fontFamily: 'JetBrains Mono',
           }}>
-            <span><School size={12}/> Since 1908</span>
+            <span><School size={12} /> Since 1908</span>
             <span>•</span>
             <span><GraduationCap size={12} /> Smart Campus</span>
           </div>
         </section>
 
-        {/*  Middle Section  */}
+        {/* Middle Section */}
         <section style={{
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '12px',
           marginBottom: '24px',
         }}>
-          {/* Clock Tower Image */}
           <div style={{
             borderRadius: 'var(--radius-md)',
             overflow: 'hidden',
@@ -110,18 +115,11 @@ function Home() {
             <img
               src={clockTower}
               alt="Historic Clock Tower"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-                display: 'block',
-              }}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
             />
             <div style={{
               position: 'absolute',
-              bottom: 0,
-              left: 0,
-              right: 0,
+              bottom: 0, left: 0, right: 0,
               padding: '8px 12px',
               background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
               color: '#fff',
@@ -131,7 +129,6 @@ function Home() {
             </div>
           </div>
 
-          {/* Place Cards */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {places.map(place => (
               <PlaceCard
@@ -140,13 +137,13 @@ function Home() {
                 description={place.description}
                 tag={place.tag}
                 image={place.image}
-                onClick={() => navigate('/chat', { state: { prefill: `Take me to "${place.name}"` } })}
+                onClick={() => navigate('/chat', { state: { prefill: `Take me to "${place.name}"`, autoSend: true } })}
               />
             ))}
           </div>
         </section>
 
-        {/* ── Mini Chat Preview ── */}
+        {/* Mini Chat */}
         <section style={{
           backgroundColor: 'var(--color-surface-container-low)',
           borderRadius: 'var(--radius-lg)',
@@ -160,13 +157,10 @@ function Home() {
             marginBottom: '16px',
           }}>
             <div style={{
-              width: '36px',
-              height: '36px',
+              width: '36px', height: '36px',
               borderRadius: 'var(--radius-full)',
               backgroundColor: 'var(--color-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '16px',
             }}>
               🤖
@@ -177,22 +171,16 @@ function Home() {
             </div>
           </div>
 
-          {/* User message */}
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '8px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px', gap: '8px' }}>
             <div style={{
+              width: '32px', height: '32px',
+              borderRadius: 'var(--radius-full)',
               backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-on-primary)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '10px 14px',
-              fontSize: '13px',
-              maxWidth: '80%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '14px', flexShrink: 0,
             }}>
-              Where is the Faculty of Engineering library?
+              🤖
             </div>
-          </div>
-
-          {/* Bot message */}
-          <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '16px' }}>
             <div style={{
               backgroundColor: 'var(--color-surface-container)',
               color: 'var(--color-on-surface)',
@@ -200,8 +188,9 @@ function Home() {
               padding: '10px 14px',
               fontSize: '13px',
               maxWidth: '80%',
+              lineHeight: '20px',
             }}>
-              It's located on the 2nd floor of the main building. Would you like me to guide you there through the shortest path?
+              Lost on campus? Same. But unlike you, I actually know where everything is. 🗺️ Ask me anything — gates, faculties, shortcuts, food — I got you.
             </div>
           </div>
 
@@ -216,6 +205,9 @@ function Home() {
           }}>
             <input
               type="text"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && handleSend()}
               placeholder="Type your destination..."
               style={{
                 flex: 1,
@@ -227,19 +219,18 @@ function Home() {
                 fontFamily: 'Manrope',
               }}
             />
-            <button style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--color-primary)',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: 'white',
-              fontSize: '14px',
-            }}>
+            <button
+              onClick={handleSend}
+              style={{
+                width: '32px', height: '32px',
+                borderRadius: 'var(--radius-full)',
+                backgroundColor: 'var(--color-primary)',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                color: 'white',
+                fontSize: '14px',
+              }}>
               →
             </button>
           </div>

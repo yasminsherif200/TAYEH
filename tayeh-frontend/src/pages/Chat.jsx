@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import Header from '../components/Header'
 import BottomNav from '../components/BottomNav'
@@ -14,13 +14,31 @@ function Chat() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
   ])
+  const bottomRef = useRef(null)
 
-  // Read prefill from PlaceCard click
   useEffect(() => {
     if (location.state?.prefill) {
-      setInput(location.state.prefill)
+      if (location.state?.autoSend) {
+        const userMessage = {
+          id: 2,
+          sender: 'user',
+          text: location.state.prefill,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        setMessages(prev => {
+          const alreadyAdded = prev.some(m => m.text === location.state.prefill)
+          if (alreadyAdded) return prev
+          return [...prev, userMessage]
+        })
+      } else {
+        setInput(location.state.prefill)
+      }
     }
-  }, [location.state])
+  }, [])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -84,12 +102,13 @@ function Chat() {
             </span>
           </div>
         ))}
+        <div ref={bottomRef} />
       </main>
 
       {/* Input Area */}
       <div style={{
         position: 'fixed',
-        bottom: '60px',
+        bottom: '80px',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',
