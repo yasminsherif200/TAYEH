@@ -54,7 +54,7 @@ function Chat() {
       const data = await sendMessage(
         messageText,
         userLocation.lat,
-        userLocation.long
+        userLocation.lng
       )
       const botMessage = {
         id: Date.now(),
