@@ -2,6 +2,9 @@ import { useState, useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import Header from '../components/Header'
 import BottomNav from '../components/BottomNav'
+import useWindowSize from '../hooks/useWindowSize'
+import useUserLocation from '../hooks/useLocation'
+import { sendMessage } from '../services/api'
 
 function Chat() {
   const location = useLocation()
@@ -14,7 +17,11 @@ function Chat() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
   ])
+  const [isTyping, setIsTyping] = useState(false)
   const bottomRef = useRef(null)
+  const { width } = useWindowSize()
+  const isMobile = width < 600
+  const { location: userLocation, locationError } = useUserLocation()
 
   useEffect(() => {
     if (location.state?.prefill) {
@@ -30,6 +37,7 @@ function Chat() {
           if (alreadyAdded) return prev
           return [...prev, userMessage]
         })
+        handleBotReply(location.state.prefill)
       } else {
         setInput(location.state.prefill)
       }
@@ -38,19 +46,48 @@ function Chat() {
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
+  }, [messages, isTyping])
+
+  const handleBotReply = async (messageText) => {
+    setIsTyping(true)
+    try {
+      const data = await sendMessage(
+        messageText,
+        userLocation.lat,
+        userLocation.long
+      )
+      const botMessage = {
+        id: Date.now(),
+        sender: 'bot',
+        text: data.reply || data.message || 'Sorry, I could not process that.',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages(prev => [...prev, botMessage])
+    } catch (error) {
+      const errorMessage = {
+        id: Date.now(),
+        sender: 'bot',
+        text: 'Sorry, something went wrong. Please try again.',
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      }
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsTyping(false)
+    }
+  }
 
   const handleSend = () => {
     if (!input.trim()) return
 
     const userMessage = {
-      id: messages.length + 1,
+      id: Date.now(),
       sender: 'user',
       text: input,
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
 
     setMessages(prev => [...prev, userMessage])
+    handleBotReply(input)
     setInput('')
   }
 
@@ -58,11 +95,25 @@ function Chat() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header />
 
+      {/* Location warning if denied */}
+      {locationError && (
+        <div style={{
+          backgroundColor: '#fff3cd',
+          color: '#856404',
+          padding: '8px 20px',
+          fontSize: '12px',
+          fontFamily: 'JetBrains Mono',
+          textAlign: 'center',
+        }}>
+          ⚠️ Location access denied — directions may be less accurate
+        </div>
+      )}
+
       {/* Messages Area */}
       <main style={{
         flex: 1,
         overflowY: 'auto',
-        padding: '16px 20px',
+        padding: isMobile ? '12px 16px' : '16px 20px',
         paddingBottom: '160px',
         display: 'flex',
         flexDirection: 'column',
@@ -86,9 +137,9 @@ function Chat() {
                 ? 'var(--color-on-primary)'
                 : 'var(--color-on-surface)',
               borderRadius: 'var(--radius-lg)',
-              padding: '12px 16px',
-              maxWidth: '75%',
-              fontSize: '14px',
+              padding: isMobile ? '10px 14px' : '12px 16px',
+              maxWidth: isMobile ? '85%' : '75%',
+              fontSize: isMobile ? '13px' : '14px',
               lineHeight: '22px',
             }}>
               {msg.text}
@@ -102,18 +153,38 @@ function Chat() {
             </span>
           </div>
         ))}
+
+        {/* Typing indicator */}
+        {isTyping && (
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+          }}>
+            <div style={{
+              backgroundColor: 'var(--color-surface-container)',
+              borderRadius: 'var(--radius-lg)',
+              padding: '12px 16px',
+              fontSize: '18px',
+              letterSpacing: '2px',
+            }}>
+              •••
+            </div>
+          </div>
+        )}
+
         <div ref={bottomRef} />
       </main>
 
       {/* Input Area */}
       <div style={{
         position: 'fixed',
-        bottom: '80px',
+        bottom: '60px',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',
         maxWidth: '900px',
-        padding: '12px 20px',
+        padding: isMobile ? '10px 16px' : '12px 20px',
         backgroundColor: 'var(--color-background)',
         borderTop: '1px solid var(--color-outline-variant)',
       }}>
