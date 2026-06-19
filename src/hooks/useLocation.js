@@ -16,7 +16,7 @@ function useUserLocation() {
       (position) => {
         setLocation({
           lat: position.coords.latitude,
-          long: position.coords.longitude,
+          lng: position.coords.longitude,
         })
         setLocationLoading(false)
       },
