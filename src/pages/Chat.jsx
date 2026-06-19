@@ -50,12 +50,14 @@ function Chat() {
 
   const handleBotReply = async (messageText) => {
     setIsTyping(true)
+    // console.log('Sending:', messageText, userLocation.lat, userLocation.lng)
     try {
       const data = await sendMessage(
         messageText,
         userLocation.lat,
         userLocation.lng
       )
+      // console.log('Response:', data)
       const botMessage = {
         id: Date.now(),
         sender: 'bot',
@@ -64,6 +66,7 @@ function Chat() {
       }
       setMessages(prev => [...prev, botMessage])
     } catch (error) {
+      // console.log('Error:', error)
       const errorMessage = {
         id: Date.now(),
         sender: 'bot',
@@ -114,7 +117,7 @@ function Chat() {
         flex: 1,
         overflowY: 'auto',
         padding: isMobile ? '12px 16px' : '16px 20px',
-        paddingBottom: '160px',
+        paddingBottom: '180px',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px',
@@ -179,7 +182,7 @@ function Chat() {
       {/* Input Area */}
       <div style={{
         position: 'fixed',
-        bottom: '60px',
+        bottom: '85px',
         left: '50%',
         transform: 'translateX(-50%)',
         width: '100%',
