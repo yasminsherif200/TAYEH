@@ -21,7 +21,7 @@ function Chat() {
   const bottomRef = useRef(null)
   const { width } = useWindowSize()
   const isMobile = width < 600
-  const { location: userLocation, locationError } = useUserLocation()
+  const { location: userLocation, locationError, locationLoading } = useUserLocation()
 
   useEffect(() => {
     if (location.state?.prefill) {
@@ -50,14 +50,14 @@ function Chat() {
 
   const handleBotReply = async (messageText) => {
     setIsTyping(true)
-    // console.log('Sending:', messageText, userLocation.lat, userLocation.lng)
+    console.log('Sending:', messageText, userLocation.lat, userLocation.lng)
     try {
       const data = await sendMessage(
         messageText,
         userLocation.lat,
         userLocation.lng
       )
-      // console.log('Response:', data)
+      console.log('Response:', data)
       const botMessage = {
         id: Date.now(),
         sender: 'bot',
@@ -66,7 +66,7 @@ function Chat() {
       }
       setMessages(prev => [...prev, botMessage])
     } catch (error) {
-      // console.log('Error:', error)
+      console.log('Error:', error)
       const errorMessage = {
         id: Date.now(),
         sender: 'bot',
@@ -81,6 +81,7 @@ function Chat() {
 
   const handleSend = () => {
     if (!input.trim()) return
+    if (locationLoading) return
 
     const userMessage = {
       id: Date.now(),
@@ -191,6 +192,20 @@ function Chat() {
         backgroundColor: 'var(--color-background)',
         borderTop: '1px solid var(--color-outline-variant)',
       }}>
+
+        {/* Location loading indicator */}
+        {locationLoading && (
+          <div style={{
+            textAlign: 'center',
+            fontSize: '11px',
+            fontFamily: 'JetBrains Mono',
+            color: 'var(--color-on-surface-variant)',
+            marginBottom: '6px',
+          }}>
+            📍 Getting your location...
+          </div>
+        )}
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -217,20 +232,24 @@ function Chat() {
           />
           <button
             onClick={handleSend}
+            disabled={locationLoading}
             style={{
               width: '36px',
               height: '36px',
               borderRadius: 'var(--radius-full)',
-              backgroundColor: 'var(--color-primary)',
+              backgroundColor: locationLoading
+                ? 'var(--color-outline)'
+                : 'var(--color-primary)',
               border: 'none',
-              cursor: 'pointer',
+              cursor: locationLoading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               color: 'white',
               fontSize: '16px',
+              transition: 'background-color 0.2s ease',
             }}>
-            →
+            {locationLoading ? '...' : '→'}
           </button>
         </div>
       </div>
