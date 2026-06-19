@@ -9,6 +9,31 @@ import { sendMessage } from '../services/api'
 // helpers
 const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
+// matches things like "2.3 كم" / "500 م" / "2.3km" / "10 دقيقة" / "10 mins"
+const DISTANCE_RE = /([\d.,]+)\s*(كيلومتر|كم|متر|م\b|km|kilometers?|meters?|m\b)/i
+const TIME_RE = /([\d.,]+)\s*(دقيقة|دقايق|دقائق|ساعة|ساعات|د\b|min(?:ute)?s?|hours?|hrs?)/i
+
+function extractDistanceTime(text) {
+  const distanceMatch = text.match(DISTANCE_RE)
+  const timeMatch = text.match(TIME_RE)
+
+  let cleaned = text
+  if (distanceMatch) cleaned = cleaned.replace(distanceMatch[0], '')
+  if (timeMatch) cleaned = cleaned.replace(timeMatch[0], '')
+
+  cleaned = cleaned
+    .replace(/[•،,\-–—]\s*[•،,\-–—]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/^[\s،,\-–—:]+|[\s،,\-–—:]+$/g, '')
+    .trim()
+
+  return {
+    distance: distanceMatch ? distanceMatch[0].trim() : null,
+    time: timeMatch ? timeMatch[0].trim() : null,
+    cleanedText: cleaned,
+  }
+}
+
 function parseBotMessage(raw) {
   if (!raw) return []
   const lines = raw.split('\n').filter(l => l.trim() !== '')
@@ -26,14 +51,58 @@ function parseBotMessage(raw) {
         index: stepIndex,
       })
     } else if (blocks.length === 0 || (stepIndex === 0 && blocks.every(b => b.type === 'text'))) {
-      // summary
-      blocks.push({ type: 'summary', content: trimmed })
+      const { distance, time, cleanedText } = extractDistanceTime(trimmed)
+      blocks.push({
+        type: 'summary',
+        content: cleanedText || trimmed,
+        distance,
+        time,
+      })
     } else {
       blocks.push({ type: 'text', content: trimmed })
     }
   })
 
   return blocks
+}
+
+function InfoChips({ distance, time, rtl }) {
+  if (!distance && !time) return null
+
+  const Chip = ({ icon, label }) => (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      backgroundColor: 'var(--color-surface)',
+      border: '1px solid var(--color-outline-variant)',
+      borderRadius: 'var(--radius-full)',
+      padding: '5px 12px',
+    }}>
+      <span style={{ fontSize: '13px', lineHeight: 1 }}>{icon}</span>
+      <span style={{
+        fontSize: '12px',
+        fontFamily: 'JetBrains Mono',
+        fontWeight: 600,
+        color: 'var(--color-on-surface)',
+        whiteSpace: 'nowrap',
+      }}>
+        {label}
+      </span>
+    </div>
+  )
+
+  return (
+    <div style={{
+      display: 'flex',
+      flexDirection: rtl ? 'row-reverse' : 'row',
+      gap: '8px',
+      flexWrap: 'wrap',
+    }}>
+      {distance && <Chip label={distance} />}
+      {time && <Chip label={time} />}
+    </div>
+  )
 }
 
 function StepBlock({ index, content }) {
@@ -141,20 +210,31 @@ function BotMessage({ text, time, isMobile }) {
       }}>
         {blocks.map((block, i) => {
           if (block.type === 'summary') {
+            const summaryRtl = isArabic(block.content)
+            const hasInfo = block.distance || block.time
             return (
-              <p
-                key={i}
-                dir={isArabic(block.content) ? 'rtl' : 'ltr'}
-                style={{
-                  margin: hasSteps ? '0 0 12px' : '0',
-                  fontSize: isMobile ? '13px' : '14px',
-                  lineHeight: '1.6',
-                  fontWeight: hasSteps ? 500 : 400,
-                  textAlign: isArabic(block.content) ? 'right' : 'left',
-                }}
-              >
-                {block.content}
-              </p>
+              <div key={i}>
+                {block.content && (
+                  <p
+                    dir={summaryRtl ? 'rtl' : 'ltr'}
+                    style={{
+                      margin: hasInfo ? '0 0 8px' : (hasSteps ? '0 0 12px' : '0'),
+                      fontSize: isMobile ? '13px' : '14px',
+                      lineHeight: '1.6',
+                      fontWeight: hasSteps ? 500 : 400,
+                      textAlign: summaryRtl ? 'right' : 'left',
+                    }}
+                  >
+                    {block.content}
+                  </p>
+                )}
+                <InfoChips
+                  distance={block.distance}
+                  time={block.time}
+                  rtl={summaryRtl}
+                />
+                {hasInfo && hasSteps && <div style={{ height: '4px' }} />}
+              </div>
             )
           }
 
