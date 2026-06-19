@@ -10,23 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-
-      - run: npm ci
-
-      - run: npm run build
-
-      - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.7
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ vars.HOST }}
           username: ${{ vars.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
-          source: "dist/*"
-          target: "/var/www/tayeh-frontend"
-          strip_components: 1
+          script: |
+            cd /var/www/tayeh-frontend
+
+            # Update the repository
+            git fetch origin
+            git reset --hard origin/main
+
+            # Install dependencies
+            npm ci
+
+            # Build the app
+            npm run build
