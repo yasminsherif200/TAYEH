@@ -17,13 +17,8 @@ jobs:
           username: ${{ vars.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            whoami
-            pwd
-            which node
-            node -v
-            which npm
-            npm -v
-            
+            export PATH="$HOME/.nvm/versions/node/v25.9.0/bin:$PATH"
+
             cd /var/www/tayeh-frontend
 
             # Update the repository
