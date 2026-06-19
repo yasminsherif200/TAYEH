@@ -1,4 +1,4 @@
-const BASE_URL = 'https://tayeh.ourgrid.dev'
+const BASE_URL = 'https://api.tayeh.ourgrid.dev'
 
 export async function sendMessage(message, lat, lng) {
   const formData = new FormData()
