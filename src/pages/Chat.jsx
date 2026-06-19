@@ -11,7 +11,7 @@ const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
 // matches things like "2.3 كم" / "500 م" / "2.3km" / "10 دقيقة" / "10 mins"
 const DISTANCE_RE = /([\d.,]+)\s*(كيلومتر|كم|متر|م\b|km|kilometers?|meters?|m\b)/i
-const TIME_RE = /([\d.,]+)\s*(دقيقة|دقايق|دقائق|ساعة|ساعات|د\b|min(?:ute)?s?|hours?|hrs?)/i
+const TIME_RE = /([\d.,]+)\s*(دقيقة|ثانية|ثواني|دقايق|دقائق|ساعة|ساعات|د\b|min(?:ute)?s?|hours?|hrs?)/i
 
 function extractDistanceTime(text) {
   const distanceMatch = text.match(DISTANCE_RE)
