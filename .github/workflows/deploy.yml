@@ -17,6 +17,13 @@ jobs:
           username: ${{ vars.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
+            whoami
+            pwd
+            which node
+            node -v
+            which npm
+            npm -v
+            
             cd /var/www/tayeh-frontend
 
             # Update the repository
