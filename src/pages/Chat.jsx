@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import Header from '../components/Header'
 import BottomNav from '../components/BottomNav'
@@ -6,6 +6,295 @@ import useWindowSize from '../hooks/useWindowSize'
 import useUserLocation from '../hooks/useLocation'
 import { sendMessage } from '../services/api'
 
+// helpers
+const isArabic = text => /[\u0600-\u06FF]/.test(text)
+
+function parseBotMessage(raw) {
+  if (!raw) return []
+  const lines = raw.split('\n').filter(l => l.trim() !== '')
+  const blocks = []
+  let stepIndex = 0
+
+  lines.forEach(line => {
+    const trimmed = line.trim()
+
+    if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
+      stepIndex++
+      blocks.push({
+        type: 'step',
+        content: trimmed.replace(/^[•\-]\s*/, ''),
+        index: stepIndex,
+      })
+    } else if (blocks.length === 0 || (stepIndex === 0 && blocks.every(b => b.type === 'text'))) {
+      // summary
+      blocks.push({ type: 'summary', content: trimmed })
+    } else {
+      blocks.push({ type: 'text', content: trimmed })
+    }
+  })
+
+  return blocks
+}
+
+function StepBlock({ index, content }) {
+  const rtl = isArabic(content)
+  return (
+    <div
+      dir={rtl ? 'rtl' : 'ltr'}
+      style={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '10px',
+        flexDirection: rtl ? 'row-reverse' : 'row',
+        padding: '8px 0',
+        borderBottom: '1px solid var(--color-outline-variant)',
+      }}
+    >
+      <div style={{
+        minWidth: '24px',
+        height: '24px',
+        borderRadius: '50%',
+        backgroundColor: 'var(--color-primary)',
+        color: 'var(--color-on-primary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '11px',
+        fontWeight: 700,
+        fontFamily: 'JetBrains Mono',
+        flexShrink: 0,
+        marginTop: '1px',
+      }}>
+        {index}
+      </div>
+      <span style={{
+        fontSize: '13px',
+        lineHeight: '1.6',
+        color: 'var(--color-on-surface)',
+      }}>
+        {content}
+      </span>
+    </div>
+  )
+}
+
+function BotMessage({ text, time, isMobile }) {
+  const blocks = parseBotMessage(text)
+  const hasSteps = blocks.some(b => b.type === 'step')
+  const rtl = isArabic(text)
+
+  return (
+    <div
+      dir={rtl ? 'rtl' : 'ltr'}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '4px',
+        maxWidth: isMobile ? '88%' : '76%',
+      }}
+    >
+      {/* Avatar + label */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '6px',
+        flexDirection: rtl ? 'row-reverse' : 'row',
+        marginBottom: '4px',
+      }}>
+        <div style={{
+          width: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--color-primary)',
+          color: 'var(--color-on-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '10px',
+          fontWeight: 700,
+          fontFamily: 'JetBrains Mono',
+          flexShrink: 0,
+        }}>
+          T
+        </div>
+        <span style={{
+          fontSize: '11px',
+          fontFamily: 'JetBrains Mono',
+          color: 'var(--color-on-surface-variant)',
+          letterSpacing: '0.04em',
+        }}>
+          TAYEH
+        </span>
+      </div>
+
+      {/* Message card */}
+      <div style={{
+        backgroundColor: 'var(--color-surface-container)',
+        color: 'var(--color-on-surface)',
+        borderRadius: 'var(--radius-lg)',
+        borderTopLeftRadius: rtl ? 'var(--radius-lg)' : '4px',
+        borderTopRightRadius: rtl ? '4px' : 'var(--radius-lg)',
+        padding: isMobile ? '10px 14px' : '12px 16px',
+        width: '100%',
+        boxSizing: 'border-box',
+      }}>
+        {blocks.map((block, i) => {
+          if (block.type === 'summary') {
+            return (
+              <p
+                key={i}
+                dir={isArabic(block.content) ? 'rtl' : 'ltr'}
+                style={{
+                  margin: hasSteps ? '0 0 12px' : '0',
+                  fontSize: isMobile ? '13px' : '14px',
+                  lineHeight: '1.6',
+                  fontWeight: hasSteps ? 500 : 400,
+                  textAlign: isArabic(block.content) ? 'right' : 'left',
+                }}
+              >
+                {block.content}
+              </p>
+            )
+          }
+
+          if (block.type === 'step') {
+            return (
+              <StepBlock
+                key={i}
+                index={block.index}
+                content={block.content}
+              />
+            )
+          }
+
+          return (
+            <p
+              key={i}
+              dir={isArabic(block.content) ? 'rtl' : 'ltr'}
+              style={{
+                margin: '8px 0 0',
+                fontSize: isMobile ? '13px' : '14px',
+                lineHeight: '1.6',
+                textAlign: isArabic(block.content) ? 'right' : 'left',
+              }}
+            >
+              {block.content}
+            </p>
+          )
+        })}
+      </div>
+
+      <span style={{
+        fontSize: '11px',
+        fontFamily: 'JetBrains Mono',
+        color: 'var(--color-on-surface-variant)',
+        marginTop: '2px',
+        alignSelf: rtl ? 'flex-end' : 'flex-start',
+      }}>
+        {time}
+      </span>
+    </div>
+  )
+}
+
+function UserMessage({ text, time, isMobile }) {
+  const rtl = isArabic(text)
+  return (
+    <div
+      dir={rtl ? 'rtl' : 'ltr'}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-end',
+        gap: '4px',
+        alignSelf: 'flex-end',
+        maxWidth: isMobile ? '85%' : '70%',
+      }}
+    >
+      <div style={{
+        backgroundColor: 'var(--color-primary)',
+        color: 'var(--color-on-primary)',
+        borderRadius: 'var(--radius-lg)',
+        borderTopRightRadius: rtl ? 'var(--radius-lg)' : '4px',
+        borderTopLeftRadius: rtl ? '4px' : 'var(--radius-lg)',
+        padding: isMobile ? '10px 14px' : '12px 16px',
+        fontSize: isMobile ? '13px' : '14px',
+        lineHeight: '1.6',
+        textAlign: rtl ? 'right' : 'left',
+      }}>
+        {text}
+      </div>
+      <span style={{
+        fontSize: '11px',
+        fontFamily: 'JetBrains Mono',
+        color: 'var(--color-on-surface-variant)',
+      }}>
+        {time}
+      </span>
+    </div>
+  )
+}
+
+function TypingIndicator() {
+  return (
+    <div style={{
+      display: 'flex',
+      alignItems: 'center',
+      gap: '6px',
+      maxWidth: '120px',
+    }}>
+      {/* Avatar */}
+      <div style={{
+        width: '24px',
+        height: '24px',
+        borderRadius: '50%',
+        backgroundColor: 'var(--color-primary)',
+        color: 'var(--color-on-primary)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontSize: '10px',
+        fontWeight: 700,
+        fontFamily: 'JetBrains Mono',
+        flexShrink: 0,
+      }}>
+        T
+      </div>
+      <div style={{
+        backgroundColor: 'var(--color-surface-container)',
+        borderRadius: 'var(--radius-lg)',
+        borderTopLeftRadius: '4px',
+        padding: '10px 14px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '5px',
+      }}>
+        {[0, 1, 2].map(i => (
+          <div
+            key={i}
+            style={{
+              width: '6px',
+              height: '6px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--color-on-surface-variant)',
+              animation: 'typingBounce 1.2s ease-in-out infinite',
+              animationDelay: `${i * 0.2}s`,
+            }}
+          />
+        ))}
+      </div>
+      <style>{`
+        @keyframes typingBounce {
+          0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+          30% { transform: translateY(-5px); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  )
+}
+
+// chat page
 function Chat() {
   const location = useLocation()
   const [input, setInput] = useState('')
@@ -13,15 +302,28 @@ function Chat() {
     {
       id: 1,
       sender: 'bot',
-      text: "Welcome to Cairo University! I'm TAYEH. How can I help you find your way today?",
+      text: "أهلاً! أنا تايه 👋. بقولك إزاي توصل لأي مكان في الجامعة.\n\nجرب تقولي:\n«وديني + المكان اللي عايزه»\nمثلاً: وديني كلية تجارة. و شوف هتوصل ولا لأ😉",
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
   ])
   const [isTyping, setIsTyping] = useState(false)
+  const [inputBarHeight, setInputBarHeight] = useState(80)
   const bottomRef = useRef(null)
+  const inputBarRef = useRef(null)
   const { width } = useWindowSize()
   const isMobile = width < 600
   const { location: userLocation, locationError, locationLoading } = useUserLocation()
+
+  useEffect(() => {
+    if (!inputBarRef.current) return
+    const observer = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        setInputBarHeight(entry.contentRect.height + 85) 
+      }
+    })
+    observer.observe(inputBarRef.current)
+    return () => observer.disconnect()
+  }, [])
 
   useEffect(() => {
     if (location.state?.prefill) {
@@ -44,44 +346,48 @@ function Chat() {
     }
   }, [])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isTyping])
 
   const handleBotReply = async (messageText) => {
     setIsTyping(true)
-    console.log('Sending:', messageText, userLocation.lat, userLocation.lng)
     try {
       const data = await sendMessage(
         messageText,
         userLocation.lat,
         userLocation.lng
       )
-      console.log('Response:', data)
+
+      const navigation = data.data?.navigation
+      const summary = navigation?.summary || ''
+      const directions = navigation?.directions || []
+
+      const botText = directions.length > 0
+        ? `${summary}\n\n${directions.map(d => `• ${d}`).join('\n')}`
+        : data.message || 'Sorry, I could not process that.'
+
       const botMessage = {
         id: Date.now(),
         sender: 'bot',
-        text: data.reply || data.message || 'Sorry, I could not process that.',
+        text: botText,
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
       setMessages(prev => [...prev, botMessage])
-    } catch (error) {
-      console.log('Error:', error)
-      const errorMessage = {
+    } catch {
+      setMessages(prev => [...prev, {
         id: Date.now(),
         sender: 'bot',
         text: 'Sorry, something went wrong. Please try again.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      }
-      setMessages(prev => [...prev, errorMessage])
+      }])
     } finally {
       setIsTyping(false)
     }
   }
 
   const handleSend = () => {
-    if (!input.trim()) return
-    if (locationLoading) return
+    if (!input.trim() || locationLoading) return
 
     const userMessage = {
       id: Date.now(),
@@ -91,15 +397,17 @@ function Chat() {
     }
 
     setMessages(prev => [...prev, userMessage])
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 0)
     handleBotReply(input)
     setInput('')
   }
+
+  const inputIsArabic = isArabic(input)
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       <Header />
 
-      {/* Location warning if denied */}
       {locationError && (
         <div style={{
           backgroundColor: '#fff3cd',
@@ -117,71 +425,39 @@ function Chat() {
       <main style={{
         flex: 1,
         overflowY: 'auto',
-        padding: isMobile ? '12px 16px' : '16px 20px',
-        paddingBottom: '180px',
+        padding: isMobile ? '16px 16px' : '20px 20px',
+        paddingBottom: `${inputBarHeight + 24}px`,
         display: 'flex',
         flexDirection: 'column',
-        gap: '16px',
+        gap: '20px',
       }}>
-        {messages.map(msg => (
-          <div
-            key={msg.id}
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: msg.sender === 'user' ? 'flex-end' : 'flex-start',
-              gap: '4px',
-            }}
-          >
-            <div style={{
-              backgroundColor: msg.sender === 'user'
-                ? 'var(--color-primary)'
-                : 'var(--color-surface-container)',
-              color: msg.sender === 'user'
-                ? 'var(--color-on-primary)'
-                : 'var(--color-on-surface)',
-              borderRadius: 'var(--radius-lg)',
-              padding: isMobile ? '10px 14px' : '12px 16px',
-              maxWidth: isMobile ? '85%' : '75%',
-              fontSize: isMobile ? '13px' : '14px',
-              lineHeight: '22px',
-            }}>
-              {msg.text}
-            </div>
-            <span style={{
-              fontSize: '11px',
-              fontFamily: 'JetBrains Mono',
-              color: 'var(--color-on-surface-variant)',
-            }}>
-              {msg.time}
-            </span>
-          </div>
-        ))}
-
-        {/* Typing indicator */}
-        {isTyping && (
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-          }}>
-            <div style={{
-              backgroundColor: 'var(--color-surface-container)',
-              borderRadius: 'var(--radius-lg)',
-              padding: '12px 16px',
-              fontSize: '18px',
-              letterSpacing: '2px',
-            }}>
-              •••
-            </div>
-          </div>
+        {messages.map(msg =>
+          msg.sender === 'bot' ? (
+            <BotMessage
+              key={msg.id}
+              text={msg.text}
+              time={msg.time}
+              isMobile={isMobile}
+            />
+          ) : (
+            <UserMessage
+              key={msg.id}
+              text={msg.text}
+              time={msg.time}
+              isMobile={isMobile}
+            />
+          )
         )}
+
+        {isTyping && <TypingIndicator />}
 
         <div ref={bottomRef} />
       </main>
 
       {/* Input Area */}
-      <div style={{
+      <div
+        ref={inputBarRef}
+        style={{
         position: 'fixed',
         bottom: '85px',
         left: '50%',
@@ -191,9 +467,8 @@ function Chat() {
         padding: isMobile ? '10px 16px' : '12px 20px',
         backgroundColor: 'var(--color-background)',
         borderTop: '1px solid var(--color-outline-variant)',
+        boxSizing: 'border-box',
       }}>
-
-        {/* Location loading indicator */}
         {locationLoading && (
           <div style={{
             textAlign: 'center',
@@ -211,12 +486,14 @@ function Chat() {
           alignItems: 'center',
           backgroundColor: 'var(--color-surface-container)',
           borderRadius: 'var(--radius-full)',
-          padding: '10px 16px',
-          gap: '10px',
+          padding: '8px 8px 8px 16px',
+          gap: '8px',
+          flexDirection: inputIsArabic ? 'row-reverse' : 'row',
         }}>
           <input
             type="text"
             value={input}
+            dir={inputIsArabic ? 'rtl' : 'ltr'}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
             placeholder="Type your message..."
@@ -228,11 +505,13 @@ function Chat() {
               fontSize: '14px',
               color: 'var(--color-on-surface)',
               fontFamily: 'Manrope',
+              textAlign: inputIsArabic ? 'right' : 'left',
             }}
           />
           <button
             onClick={handleSend}
             disabled={locationLoading}
+            aria-label="Send message"
             style={{
               width: '36px',
               height: '36px',
@@ -247,9 +526,12 @@ function Chat() {
               justifyContent: 'center',
               color: 'white',
               fontSize: '16px',
+              flexShrink: 0,
               transition: 'background-color 0.2s ease',
-            }}>
-            {locationLoading ? '...' : '→'}
+              transform: inputIsArabic ? 'scaleX(-1)' : 'none',
+            }}
+          >
+            {locationLoading ? '…' : '→'}
           </button>
         </div>
       </div>
