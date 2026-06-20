@@ -406,25 +406,23 @@ function Chat() {
   }, [])
 
   useEffect(() => {
-    if (location.state?.prefill) {
-      if (location.state?.autoSend) {
-        const userMessage = {
-          id: 2,
-          sender: 'user',
-          text: location.state.prefill,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        }
-        setMessages(prev => {
-          const alreadyAdded = prev.some(m => m.text === location.state.prefill)
-          if (alreadyAdded) return prev
-          return [...prev, userMessage]
-        })
-        handleBotReply(location.state.prefill)
-      } else {
-        setInput(location.state.prefill)
+    if (location.state?.prefill && location.state?.autoSend && !locationLoading) {
+      const userMessage = {
+        id: 2,
+        sender: 'user',
+        text: location.state.prefill,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }
+      setMessages(prev => {
+        const alreadyAdded = prev.some(m => m.text === location.state.prefill)
+        if (alreadyAdded) return prev
+        return [...prev, userMessage]
+      })
+      handleBotReply(location.state.prefill)
+    } else if (location.state?.prefill && !location.state?.autoSend) {
+      setInput(location.state.prefill)
     }
-  }, [])
+  }, [locationLoading])
 
   useLayoutEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
