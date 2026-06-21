@@ -68,24 +68,60 @@ function Home() {
             An AI-powered conversational assistant that knows every corner of the campus. Just ask, and we'll lead the way.
           </p>
 
-          <button
-            onClick={() => navigate('/chat')}
-            style={{
-              backgroundColor: 'var(--color-primary)',
-              color: 'var(--color-on-primary)',
-              border: 'none',
-              borderRadius: 'var(--radius-full)',
-              padding: isMobile ? '12px 24px' : '14px 28px',
-              fontSize: isMobile ? '14px' : '15px',
-              fontWeight: '600',
-              cursor: 'pointer',
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '8px',
-              marginBottom: '16px',
-            }}>
-            Start Navigating →
-          </button>
+          <div style={{
+            display: 'flex',
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '12px',
+            marginBottom: '16px',
+          }}>
+            <button
+              onClick={() => navigate('/chat')}
+              style={{
+                backgroundColor: 'var(--color-primary)',
+                color: 'var(--color-on-primary)',
+                border: 'none',
+                borderRadius: 'var(--radius-full)',
+                padding: isMobile ? '12px 24px' : '14px 28px',
+                fontSize: isMobile ? '14px' : '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+              }}>
+              Start Navigating →
+            </button>
+
+            <a
+              href="https://api.tayeh.ourgrid.dev/downloads/tayeh.apk"
+              download="Tayeh.apk"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '8px',
+                backgroundColor: 'transparent',
+                color: 'var(--color-primary)',
+                border: '2px solid var(--color-primary)',
+                borderRadius: 'var(--radius-full)',
+                padding: isMobile ? '10px 22px' : '12px 24px',
+                fontSize: isMobile ? '14px' : '15px',
+                fontWeight: '600',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+                e.currentTarget.style.color = 'var(--color-on-primary)'
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.backgroundColor = 'transparent'
+                e.currentTarget.style.color = 'var(--color-primary)'
+              }}>
+               Download for Android
+            </a>
+          </div>
 
           <div style={{
             display: 'flex',
