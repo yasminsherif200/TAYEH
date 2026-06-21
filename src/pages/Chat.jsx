@@ -9,9 +9,8 @@ import { sendMessage } from '../services/api'
 // helpers
 const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
-// matches things like "2.3 كم" / "500 م" / "2.3km" / "10 دقيقة" / "10 mins"
 const DISTANCE_RE = /([\d.,]+)\s*(كيلومتر|كم|متر|م\b|km|kilometers?|meters?|m\b)/i
-const TIME_RE = /([\d.,]+)\s*(دقيقة|ثانية|ثواني|دقايق|دقائق|ساعة|ساعات|د\b|min(?:ute)?s?|hours?|hrs?)/i
+const TIME_RE = /([\d.,]+)\s*(دقيقتين|دقيقة|ثانية|ثواني|دقايق|دقائق|ساعة|ساعات|د\b|min(?:ute)?s?|hours?|hrs?)/i
 
 function extractDistanceTime(text) {
   const distanceMatch = text.match(DISTANCE_RE)
@@ -69,7 +68,7 @@ function parseBotMessage(raw) {
 function InfoChips({ distance, time, rtl }) {
   if (!distance && !time) return null
 
-  const Chip = ({ icon, label }) => (
+  const Chip = ({ label }) => (
     <div style={{
       display: 'flex',
       alignItems: 'center',
@@ -79,7 +78,6 @@ function InfoChips({ distance, time, rtl }) {
       borderRadius: 'var(--radius-full)',
       padding: '5px 12px',
     }}>
-      <span style={{ fontSize: '13px', lineHeight: 1 }}>{icon}</span>
       <span style={{
         fontSize: '12px',
         fontFamily: 'JetBrains Mono',
@@ -147,7 +145,7 @@ function StepBlock({ index, content }) {
   )
 }
 
-function BotMessage({ text, time, isMobile }) {
+function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick }) {
   const blocks = parseBotMessage(text)
   const hasSteps = blocks.some(b => b.type === 'step')
   const rtl = isArabic(text)
@@ -265,6 +263,37 @@ function BotMessage({ text, time, isMobile }) {
         })}
       </div>
 
+      {/* Suggestion button */}
+      {suggestion && (
+        <button
+          onClick={() => onSuggestionClick(suggestion)}
+          style={{
+            marginTop: '8px',
+            backgroundColor: 'transparent',
+            border: '2px solid var(--color-primary)',
+            borderRadius: 'var(--radius-full)',
+            padding: '8px 16px',
+            fontSize: '13px',
+            fontWeight: '600',
+            color: 'var(--color-primary)',
+            cursor: 'pointer',
+            fontFamily: 'Manrope',
+            transition: 'all 0.2s ease',
+            alignSelf: rtl ? 'flex-end' : 'flex-start',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.backgroundColor = 'var(--color-primary)'
+            e.currentTarget.style.color = 'var(--color-on-primary)'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.backgroundColor = 'transparent'
+            e.currentTarget.style.color = 'var(--color-primary)'
+          }}
+        >
+          {suggestion} ←
+        </button>
+      )}
+
       <span style={{
         fontSize: '11px',
         fontFamily: 'JetBrains Mono',
@@ -324,7 +353,6 @@ function TypingIndicator() {
       gap: '6px',
       maxWidth: '120px',
     }}>
-      {/* Avatar */}
       <div style={{
         width: '24px',
         height: '24px',
@@ -398,7 +426,7 @@ function Chat() {
     if (!inputBarRef.current) return
     const observer = new ResizeObserver(entries => {
       for (const entry of entries) {
-        setInputBarHeight(entry.contentRect.height + 85) 
+        setInputBarHeight(entry.contentRect.height + 85)
       }
     })
     observer.observe(inputBarRef.current)
@@ -437,21 +465,35 @@ function Chat() {
         userLocation.lng
       )
 
-      const navigation = data.data?.navigation
-      const summary = navigation?.summary || ''
-      const directions = navigation?.directions || []
+      const requiresConfirmation = data.data?.requires_confirmation
+      const gateName = data.data?.transport?.place?.name
 
-      const botText = directions.length > 0
-        ? `${summary}\n\n${directions.map(d => `• ${d}`).join('\n')}`
-        : data.message || 'Sorry, I could not process that.'
+      if (requiresConfirmation && gateName) {
+        const botMessage = {
+          id: Date.now(),
+          sender: 'bot',
+          text: data.data.message,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          suggestion: `وديني ${gateName}`,
+        }
+        setMessages(prev => [...prev, botMessage])
+      } else {
+        const navigation = data.data?.navigation
+        const summary = navigation?.summary || ''
+        const directions = navigation?.directions || []
 
-      const botMessage = {
-        id: Date.now(),
-        sender: 'bot',
-        text: botText,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        const botText = directions.length > 0
+          ? `${summary}\n\n${directions.map(d => `• ${d}`).join('\n')}`
+          : data.message || 'Sorry, I could not process that.'
+
+        const botMessage = {
+          id: Date.now(),
+          sender: 'bot',
+          text: botText,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        setMessages(prev => [...prev, botMessage])
       }
-      setMessages(prev => [...prev, botMessage])
     } catch {
       setMessages(prev => [...prev, {
         id: Date.now(),
@@ -462,6 +504,17 @@ function Chat() {
     } finally {
       setIsTyping(false)
     }
+  }
+
+  const handleSuggestionClick = (suggestionText) => {
+    const userMessage = {
+      id: Date.now(),
+      sender: 'user',
+      text: suggestionText,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    }
+    setMessages(prev => [...prev, userMessage])
+    handleBotReply(suggestionText)
   }
 
   const handleSend = () => {
@@ -516,6 +569,8 @@ function Chat() {
               text={msg.text}
               time={msg.time}
               isMobile={isMobile}
+              suggestion={msg.suggestion}
+              onSuggestionClick={handleSuggestionClick}
             />
           ) : (
             <UserMessage
@@ -536,17 +591,17 @@ function Chat() {
       <div
         ref={inputBarRef}
         style={{
-        position: 'fixed',
-        bottom: '85px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        width: '100%',
-        maxWidth: '900px',
-        padding: isMobile ? '10px 16px' : '12px 20px',
-        backgroundColor: 'var(--color-background)',
-        borderTop: '1px solid var(--color-outline-variant)',
-        boxSizing: 'border-box',
-      }}>
+          position: 'fixed',
+          bottom: '85px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '100%',
+          maxWidth: '900px',
+          padding: isMobile ? '10px 16px' : '12px 20px',
+          backgroundColor: 'var(--color-background)',
+          borderTop: '1px solid var(--color-outline-variant)',
+          boxSizing: 'border-box',
+        }}>
         {locationLoading && (
           <div style={{
             textAlign: 'center',
