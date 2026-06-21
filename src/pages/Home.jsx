@@ -8,6 +8,7 @@ import cafeteria from '../assets/cafeteria.jpg'
 import library from '../assets/library.jpg'
 import atm from '../assets/atm.jpg'
 import { useState } from 'react'
+import useWindowSize from '../hooks/useWindowSize'
 
 const places = [
   { id: 1, name: 'Breakout Cafeteria', description: 'Student hub for meals', tag: 'cheap', image: cafeteria },
@@ -18,6 +19,8 @@ const places = [
 function Home() {
   const navigate = useNavigate()
   const [input, setInput] = useState('')
+  const { width } = useWindowSize()
+  const isMobile = width < 600
 
   const handleSend = () => {
     if (!input.trim()) return
@@ -28,10 +31,10 @@ function Home() {
     <div>
       <Header />
 
-      <main style={{ padding: '0 20px 100px 20px' }}>
+      <main style={{ padding: isMobile ? '0 16px 100px 16px' : '0 20px 100px 20px' }}>
 
         {/* Hero Section */}
-        <section style={{ textAlign: 'center', padding: '32px 0 24px 0' }}>
+        <section style={{ textAlign: 'center', padding: isMobile ? '24px 0 20px 0' : '32px 0 24px 0' }}>
           <div style={{
             display: 'inline-block',
             backgroundColor: 'var(--color-surface-container)',
@@ -47,9 +50,9 @@ function Home() {
           </div>
 
           <h1 style={{
-            fontSize: '26px',
+            fontSize: isMobile ? '22px' : '26px',
             fontWeight: '700',
-            lineHeight: '34px',
+            lineHeight: isMobile ? '30px' : '34px',
             color: 'var(--color-on-surface)',
             marginBottom: '12px',
           }}>
@@ -57,7 +60,7 @@ function Home() {
           </h1>
 
           <p style={{
-            fontSize: '15px',
+            fontSize: isMobile ? '14px' : '15px',
             color: 'var(--color-on-surface-variant)',
             lineHeight: '24px',
             marginBottom: '24px',
@@ -72,8 +75,8 @@ function Home() {
               color: 'var(--color-on-primary)',
               border: 'none',
               borderRadius: 'var(--radius-full)',
-              padding: '14px 28px',
-              fontSize: '15px',
+              padding: isMobile ? '12px 24px' : '14px 28px',
+              fontSize: isMobile ? '14px' : '15px',
               fontWeight: '600',
               cursor: 'pointer',
               display: 'inline-flex',
@@ -100,16 +103,19 @@ function Home() {
 
         {/* Middle Section */}
         <section style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
+          display: 'flex',
+          flexDirection: isMobile ? 'column' : 'row',
           gap: '12px',
           marginBottom: '24px',
         }}>
+          {/* Clock Tower Image */}
           <div style={{
             borderRadius: 'var(--radius-md)',
             overflow: 'hidden',
             position: 'relative',
-            minHeight: '180px',
+            height: isMobile ? '200px' : 'auto',
+            flex: isMobile ? 'none' : '1',
+            minHeight: isMobile ? 'unset' : '180px',
             backgroundColor: 'var(--color-surface-container)',
           }}>
             <img
@@ -129,7 +135,13 @@ function Home() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Place Cards */}
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            flex: isMobile ? 'none' : '1',
+          }}>
             {places.map(place => (
               <PlaceCard
                 key={place.id}
@@ -186,7 +198,7 @@ function Home() {
               color: 'var(--color-on-surface)',
               borderRadius: 'var(--radius-lg)',
               padding: '10px 14px',
-              fontSize: '13px',
+              fontSize: isMobile ? '12px' : '13px',
               maxWidth: '80%',
               lineHeight: '20px',
             }}>
