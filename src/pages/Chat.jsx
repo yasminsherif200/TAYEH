@@ -9,6 +9,19 @@ import { sendMessage } from '../services/api'
 // helpers
 const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
+function cleanText(text) {
+  if (!text) return ''
+  
+  return text
+    .split(' ')
+    .filter(word => {
+      return /^[\u0600-\u06FF\u0020-\u007Ea-zA-Z0-9\s.,،؟?!:؛;()\-–—"']+$/.test(word)
+    })
+    .join(' ')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
 function formatDistance(meters) {
   if (!meters) return null
   if (meters >= 1000) return `${(meters / 1000).toFixed(1)} كم`
@@ -44,7 +57,7 @@ function parseBotMessage(raw) {
     } else if (blocks.length === 0 || (stepIndex === 0 && blocks.every(b => b.type === 'text'))) {
       blocks.push({
         type: 'summary',
-        content: trimmed,
+        content: cleanText(trimmed),
       })
     } else {
       blocks.push({ type: 'text', content: trimmed })
