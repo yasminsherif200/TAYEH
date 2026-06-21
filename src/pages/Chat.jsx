@@ -9,28 +9,20 @@ import { sendMessage } from '../services/api'
 // helpers
 const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
-const DISTANCE_RE = /([\d.,]+)\s*(كيلومتر|كم|متر|م\b|km|kilometers?|meters?|m\b)/i
-const TIME_RE = /([\d.,]+)\s*(دقيقتين|دقيقة|ثانية|ثواني|دقايق|دقائق|ساعة|ساعات|د\b|min(?:ute)?s?|hours?|hrs?)/i
+function formatDistance(meters) {
+  if (!meters) return null
+  if (meters >= 1000) return `${(meters / 1000).toFixed(1)} كم`
+  return `${Math.round(meters)} متر`
+}
 
-function extractDistanceTime(text) {
-  const distanceMatch = text.match(DISTANCE_RE)
-  const timeMatch = text.match(TIME_RE)
-
-  let cleaned = text
-  if (distanceMatch) cleaned = cleaned.replace(distanceMatch[0], '')
-  if (timeMatch) cleaned = cleaned.replace(timeMatch[0], '')
-
-  cleaned = cleaned
-    .replace(/[•،,\-–—]\s*[•،,\-–—]/g, '')
-    .replace(/\s{2,}/g, ' ')
-    .replace(/^[\s،,\-–—:]+|[\s،,\-–—:]+$/g, '')
-    .trim()
-
-  return {
-    distance: distanceMatch ? distanceMatch[0].trim() : null,
-    time: timeMatch ? timeMatch[0].trim() : null,
-    cleanedText: cleaned,
-  }
+function formatTime(seconds) {
+  if (!seconds) return null
+  const minutes = Math.round(seconds / 60)
+  if (minutes < 1) return 'أقل من دقيقة'
+  if (minutes === 1) return 'دقيقة واحدة'
+  if (minutes === 2) return 'دقيقتين'
+  if (minutes <= 10) return `${minutes} دقائق`
+  return `${minutes} دقيقة`
 }
 
 function parseBotMessage(raw) {
@@ -50,12 +42,9 @@ function parseBotMessage(raw) {
         index: stepIndex,
       })
     } else if (blocks.length === 0 || (stepIndex === 0 && blocks.every(b => b.type === 'text'))) {
-      const { distance, time, cleanedText } = extractDistanceTime(trimmed)
       blocks.push({
         type: 'summary',
-        content: cleanedText || trimmed,
-        distance,
-        time,
+        content: trimmed,
       })
     } else {
       blocks.push({ type: 'text', content: trimmed })
@@ -96,9 +85,10 @@ function InfoChips({ distance, time, rtl }) {
       flexDirection: rtl ? 'row-reverse' : 'row',
       gap: '8px',
       flexWrap: 'wrap',
+      marginTop: '10px',
     }}>
-      {distance && <Chip label={distance} />}
-      {time && <Chip label={time} />}
+      {distance && <Chip label={`${distance}`} />}
+      {time && <Chip label={`${time}`} />}
     </div>
   )
 }
@@ -145,7 +135,7 @@ function StepBlock({ index, content }) {
   )
 }
 
-function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick }) {
+function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime }) {
   const blocks = parseBotMessage(text)
   const hasSteps = blocks.some(b => b.type === 'step')
   const rtl = isArabic(text)
@@ -209,14 +199,13 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick }) {
         {blocks.map((block, i) => {
           if (block.type === 'summary') {
             const summaryRtl = isArabic(block.content)
-            const hasInfo = block.distance || block.time
             return (
               <div key={i}>
                 {block.content && (
                   <p
                     dir={summaryRtl ? 'rtl' : 'ltr'}
                     style={{
-                      margin: hasInfo ? '0 0 8px' : (hasSteps ? '0 0 12px' : '0'),
+                      margin: '0 0 8px',
                       fontSize: isMobile ? '13px' : '14px',
                       lineHeight: '1.6',
                       fontWeight: hasSteps ? 500 : 400,
@@ -227,11 +216,11 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick }) {
                   </p>
                 )}
                 <InfoChips
-                  distance={block.distance}
-                  time={block.time}
+                  distance={distance}
+                  time={routeTime}
                   rtl={summaryRtl}
                 />
-                {hasInfo && hasSteps && <div style={{ height: '4px' }} />}
+                {(distance || routeTime) && hasSteps && <div style={{ height: '8px' }} />}
               </div>
             )
           }
@@ -402,7 +391,6 @@ function TypingIndicator() {
   )
 }
 
-// chat page
 function Chat() {
   const location = useLocation()
   const [input, setInput] = useState('')
@@ -479,6 +467,7 @@ function Chat() {
         setMessages(prev => [...prev, botMessage])
       } else {
         const navigation = data.data?.navigation
+        const route = data.data?.route
         const summary = navigation?.summary || ''
         const directions = navigation?.directions || []
 
@@ -491,6 +480,8 @@ function Chat() {
           sender: 'bot',
           text: botText,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          distance: formatDistance(route?.total_distance),
+          routeTime: formatTime(route?.total_time),
         }
         setMessages(prev => [...prev, botMessage])
       }
@@ -552,7 +543,6 @@ function Chat() {
         </div>
       )}
 
-      {/* Messages Area */}
       <main style={{
         flex: 1,
         overflowY: 'auto',
@@ -571,6 +561,8 @@ function Chat() {
               isMobile={isMobile}
               suggestion={msg.suggestion}
               onSuggestionClick={handleSuggestionClick}
+              distance={msg.distance}
+              routeTime={msg.routeTime}
             />
           ) : (
             <UserMessage
@@ -587,7 +579,6 @@ function Chat() {
         <div ref={bottomRef} />
       </main>
 
-      {/* Input Area */}
       <div
         ref={inputBarRef}
         style={{
