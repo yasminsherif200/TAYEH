@@ -4,6 +4,7 @@ import Header from '../components/Header'
 import BottomNav from '../components/BottomNav'
 import useWindowSize from '../hooks/useWindowSize'
 import useUserLocation from '../hooks/useLocation'
+import useSpeechRecognition from '../hooks/useSpeechRecognition'
 import { sendMessage } from '../services/api'
 
 // helpers
@@ -11,7 +12,6 @@ const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
 function cleanText(text) {
   if (!text) return ''
-  
   return text
     .split(' ')
     .filter(word => {
@@ -46,7 +46,6 @@ function parseBotMessage(raw) {
 
   lines.forEach(line => {
     const trimmed = line.trim()
-
     if (trimmed.startsWith('•') || trimmed.startsWith('-')) {
       stepIndex++
       blocks.push({
@@ -399,6 +398,10 @@ function TypingIndicator() {
           0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
           30% { transform: translateY(-5px); opacity: 1; }
         }
+        @keyframes pulse {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.4); opacity: 0.6; }
+        }
       `}</style>
     </div>
   )
@@ -422,6 +425,11 @@ function Chat() {
   const { width } = useWindowSize()
   const isMobile = width < 600
   const { location: userLocation, locationError, locationLoading } = useUserLocation()
+  const { isListening, startListening, stopListening } = useSpeechRecognition({
+    onResult: (transcript) => {
+      setInput(prev => prev ? `${prev} ${transcript}` : transcript)
+    }
+  })
 
   useEffect(() => {
     if (!inputBarRef.current) return
@@ -618,6 +626,20 @@ function Chat() {
           </div>
         )}
 
+        {/* Recording indicator */}
+        {isListening && (
+          <div style={{
+            textAlign: 'center',
+            fontSize: '11px',
+            fontFamily: 'JetBrains Mono',
+            color: '#dc2626',
+            marginBottom: '6px',
+            animation: 'pulse 1s ease-in-out infinite',
+          }}>
+             Recording ..
+          </div>
+        )}
+
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -633,7 +655,7 @@ function Chat() {
             dir={inputIsArabic ? 'rtl' : 'ltr'}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && handleSend()}
-            placeholder="Type your message..."
+            placeholder={isListening ? 'Recording ..' : 'Type your message...'}
             style={{
               flex: 1,
               border: 'none',
@@ -645,6 +667,48 @@ function Chat() {
               textAlign: inputIsArabic ? 'right' : 'left',
             }}
           />
+
+          {/* Mic Button */}
+          <button
+            onClick={isListening ? stopListening : startListening}
+            aria-label={isListening ? 'Stop listening' : 'Start voice input'}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: 'var(--radius-full)',
+              backgroundColor: isListening
+                ? '#dc2626'
+                : 'var(--color-surface-container-high)',
+              border: isListening
+                ? 'none'
+                : '1px solid var(--color-outline-variant)',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.2s ease',
+            }}
+          >
+            {isListening ? (
+              <div style={{
+                width: '10px',
+                height: '10px',
+                borderRadius: '50%',
+                backgroundColor: 'white',
+                animation: 'pulse 1s ease-in-out infinite',
+              }} />
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--color-on-surface-variant)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                <line x1="12" y1="19" x2="12" y2="23"/>
+                <line x1="8" y1="23" x2="16" y2="23"/>
+              </svg>
+            )}
+          </button>
+
+          {/* Send Button */}
           <button
             onClick={handleSend}
             disabled={locationLoading}
@@ -671,6 +735,13 @@ function Chat() {
             {locationLoading ? '…' : '→'}
           </button>
         </div>
+
+        <style>{`
+          @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.4); opacity: 0.6; }
+          }
+        `}</style>
       </div>
 
       <BottomNav />
