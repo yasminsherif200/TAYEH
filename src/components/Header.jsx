@@ -18,6 +18,8 @@ function Header() {
       <span
         onClick={() => navigate('/')}
         style={{
+          display: 'inline-flex',
+          alignItems: 'center',
           fontFamily: 'Manrope',
           fontWeight: '700',
           fontSize: '18px',
@@ -25,7 +27,7 @@ function Header() {
           cursor: 'pointer',
           letterSpacing: '0.05em',
         }}>
-        TAYEH
+        <img src="public/logo.png" alt="TAYEH" style={{ width: '75px', height: '75px', marginRight: '10px', objectFit: 'contain'}} />
       </span>
 
       <button onClick={() => navigate('/chat')} 
