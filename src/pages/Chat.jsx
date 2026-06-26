@@ -7,7 +7,7 @@ import useUserLocation from '../hooks/useLocation'
 import useSpeechRecognition from '../hooks/useSpeechRecognition'
 import useTextToSpeech from '../hooks/useTextToSpeech'
 import { sendMessage } from '../services/api'
-
+import logo from '../../public/logo2.png'
 // helpers
 const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
@@ -186,7 +186,7 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, dista
           fontFamily: 'JetBrains Mono',
           flexShrink: 0,
         }}>
-          <img src="/public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+          <img src={logo} alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
         </div>
         <span style={{
           fontSize: '11px',

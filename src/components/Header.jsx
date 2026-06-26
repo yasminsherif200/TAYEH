@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { Compass } from 'lucide-react'
+import logo from '../../public/logo.png'
 
 function Header() {
   const navigate = useNavigate()
@@ -27,7 +28,7 @@ function Header() {
           cursor: 'pointer',
           letterSpacing: '0.05em',
         }}>
-        <img src="public/logo.png" alt="TAYEH" style={{ width: '75px', height: '75px', marginRight: '10px', objectFit: 'contain'}} />
+        <img src={logo} alt="TAYEH" style={{ width: '75px', height: '75px', marginRight: '10px', objectFit: 'contain'}} />
       </span>
 
       <button onClick={() => navigate('/chat')} 

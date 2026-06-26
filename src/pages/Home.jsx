@@ -9,6 +9,7 @@ import library from '../assets/library.jpg'
 import atm from '../assets/atm.jpg'
 import { useState } from 'react'
 import useWindowSize from '../hooks/useWindowSize'
+import logo from '../../public/logo2.png'
 
 const places = [
   { id: 1, name: 'Breakout Cafeteria', description: 'Student hub for meals', tag: 'cheap', image: cafeteria },
@@ -211,7 +212,7 @@ function Home() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '16px',
             }}>
-              <img src="/public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+              <img src={logo} alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
             </div>
             <div>
               <p style={{ fontWeight: '600', fontSize: '14px' }}>Ask TAYEH</p>
@@ -227,7 +228,7 @@ function Home() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '14px', flexShrink: 0,
             }}>
-              <img src="/public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+              <img src={logo} alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
 
             </div>
             <div style={{
