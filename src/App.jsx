@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import Home from './pages/Home'
 import Chat from './pages/Chat'
+import AdminLayout from './pages/admin/AdminLayout'
+import Analytics from './pages/admin/Analytics'
 
 function App() {
   return (
