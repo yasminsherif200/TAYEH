@@ -3,6 +3,7 @@ import Home from './pages/Home'
 import Chat from './pages/Chat'
 import AdminLayout from './pages/admin/AdminLayout'
 import Analytics from './pages/admin/Analytics'
+import Places from './pages/admin/Places'
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
           <Route path="/admin" element={<Analytics />} />
+          <Route path="/admin/places" element={<Places />} />
         </Routes>
       </div>
     </BrowserRouter>
