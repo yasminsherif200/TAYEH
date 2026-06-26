@@ -8,6 +8,7 @@ import useSpeechRecognition from '../hooks/useSpeechRecognition'
 import useTextToSpeech from '../hooks/useTextToSpeech'
 import { sendMessage } from '../services/api'
 import logo from '../../public/logo2.png'
+
 // helpers
 const isArabic = text => /[\u0600-\u06FF]/.test(text)
 
@@ -505,7 +506,7 @@ function Chat() {
           suggestion: `وديني ${gateName}`,
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text, botMessage.id)
+        // speak(botMessage.text, botMessage.id)
       } else {
         const navigation = data.data?.navigation
         const route = data.data?.route
@@ -525,7 +526,7 @@ function Chat() {
           routeTime: formatTime(route?.total_time),
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text, botMessage.id)
+        // speak(botMessage.text, botMessage.id)
       }
     } catch {
       setMessages(prev => [...prev, {
@@ -534,7 +535,7 @@ function Chat() {
         text: 'Sorry, something went wrong. Please try again.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }])
-      speak('اسف، حصل خطأ. حاول مرة تاني.', Date.now()  )
+      // speak('اسف، حصل خطأ. حاول مرة تاني.', Date.now()  )
     } finally {
       setIsTyping(false)
     }
