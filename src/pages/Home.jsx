@@ -211,7 +211,7 @@ function Home() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '16px',
             }}>
-              <img src="public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+              <img src="/public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
             </div>
             <div>
               <p style={{ fontWeight: '600', fontSize: '14px' }}>Ask TAYEH</p>
@@ -227,7 +227,7 @@ function Home() {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: '14px', flexShrink: 0,
             }}>
-              <img src="public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+              <img src="/public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
 
             </div>
             <div style={{

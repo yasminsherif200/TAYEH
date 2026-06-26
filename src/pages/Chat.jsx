@@ -186,7 +186,7 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, dista
           fontFamily: 'JetBrains Mono',
           flexShrink: 0,
         }}>
-          <img src="public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
+          <img src="/public/logo2.png" alt="TAYEH" style={{ width: '75%', height: '75%', objectFit: 'contain' }} />
         </div>
         <span style={{
           fontSize: '11px',
