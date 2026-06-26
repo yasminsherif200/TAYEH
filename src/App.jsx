@@ -13,6 +13,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/chat" element={<Chat />} />
+          <Route path="/admin" element={<Analytics />} />
         </Routes>
       </div>
     </BrowserRouter>
