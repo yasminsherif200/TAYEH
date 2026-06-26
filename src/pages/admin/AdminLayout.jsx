@@ -132,7 +132,6 @@ export default function AdminLayout({ children }) {
       zIndex: 200,
       backgroundColor: '#fbfbe2',
     }}>
-      {/* Desktop Sidebar */}
       <aside
         className="admin-sidebar-desktop"
         style={{
@@ -147,7 +146,6 @@ export default function AdminLayout({ children }) {
         <SidebarContent />
       </aside>
 
-      {/* Mobile overlay */}
       {drawerOpen && (
         <div
           onClick={() => setDrawerOpen(false)}
@@ -160,7 +158,6 @@ export default function AdminLayout({ children }) {
         />
       )}
 
-      {/* Mobile Drawer */}
       <aside
         className="admin-sidebar-mobile"
         style={{
@@ -206,7 +203,6 @@ export default function AdminLayout({ children }) {
           boxShadow: 'inset 4px 0 12px rgba(26, 36, 16, 0.06)',
         }}
       >
-        {/* Mobile top bar */}
         <div
           className="admin-mobile-header"
           style={{ display: 'none' }}

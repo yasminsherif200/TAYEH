@@ -245,7 +245,6 @@ export default function Analytics() {
     <AdminLayout>
       <style>{STYLES}</style>
 
-      {/* Hero */}
       <div
         className="an-hero"
         style={{
@@ -292,7 +291,7 @@ export default function Analytics() {
       {/* Body */}
       <div className="an-body">
 
-        {/* Places by type bar chart */}
+        {/* bar chart */}
         <Card
           title="Places by Type"
           subtitle={`${totals.places} total across ${byType.length} categories`}
@@ -324,7 +323,7 @@ export default function Analytics() {
           </ResponsiveContainer>
         </Card>
 
-        {/* Transport + Paths */}
+        {/* transport + paths */}
         <div style={{ display: 'flex', gap: '20px', flexWrap: 'wrap', marginBottom: '20px' }}>
           <div style={{ flex: '1 1 240px', minWidth: 0 }}>
             <Card title="Transportation" subtitle={`${transportTotal} total routes`} noPad>
@@ -401,7 +400,7 @@ export default function Analytics() {
           </div>
         </div>
 
-        {/* Most Requested Places */}
+        {/* most requested places */}
         <Card
           title="Most Requested Places"
           subtitle={`${places.never_requested} of ${totals.places} never visited`}

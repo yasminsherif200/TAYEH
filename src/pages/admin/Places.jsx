@@ -263,7 +263,7 @@ export default function Places() {
               borderBottom: `1px solid ${BORDER}`,
             }}
           >
-            {['#', 'Name', 'Type', 'Req'].map(h => (
+            {['#', 'Name', 'Type', 'Visits'].map(h => (
               <span key={h} style={{
                 fontSize: '10px',
                 fontFamily: "'JetBrains Mono', monospace",
