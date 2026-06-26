@@ -1,10 +1,10 @@
 import { useState, useRef } from 'react'
 
 function useTextToSpeech() {
-  const [isSpeaking, setIsSpeaking] = useState(false)
+  const [speakingId, setSpeakingId] = useState(null)
   const utteranceRef = useRef(null)
 
-  const speak = (text) => {
+  const speak = (text, id) => {
     window.speechSynthesis.cancel()
 
     if (!text) return
@@ -17,15 +17,15 @@ function useTextToSpeech() {
     utterance.pitch = 1         
     utterance.volume = 1        
     utterance.onstart = () => {
-      setIsSpeaking(true)
+      setSpeakingId(id)
     }
 
     utterance.onend = () => {
-      setIsSpeaking(false)
+      setSpeakingId(null)
     }
 
     utterance.onerror = () => {
-      setIsSpeaking(false)
+      setSpeakingId(null)
     }
 
     window.speechSynthesis.speak(utterance)
@@ -33,10 +33,10 @@ function useTextToSpeech() {
 
   const stop = () => {
     window.speechSynthesis.cancel()
-    setIsSpeaking(false)
+    setSpeakingId(null)
   }
 
-  return { isSpeaking, speak, stop }
+  return { speakingId, speak, stop }
 }
 
 export default useTextToSpeech

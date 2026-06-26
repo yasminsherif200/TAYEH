@@ -148,7 +148,7 @@ function StepBlock({ index, content }) {
   )
 }
 
-function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime }) {
+function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime, msgId, speakingId, onSpeak, onStop }) {
   const blocks = parseBotMessage(text)
   const hasSteps = blocks.some(b => b.type === 'step')
   const rtl = isArabic(text)
@@ -295,16 +295,33 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, dista
           {suggestion} ←
         </button>
       )}
-
-      <span style={{
-        fontSize: '11px',
-        fontFamily: 'JetBrains Mono',
-        color: 'var(--color-on-surface-variant)',
-        marginTop: '2px',
-        alignSelf: rtl ? 'flex-end' : 'flex-start',
-      }}>
-        {time}
-      </span>
+      
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            marginTop: '2px',
+            alignSelf: rtl ? 'flex-end' : 'flex-start',
+            flexDirection: rtl ? 'row-reverse' : 'row',
+          }}>
+            <span style={{
+              fontSize: '11px',
+              fontFamily: 'JetBrains Mono',
+              color: 'var(--color-on-surface-variant)',
+            }}>
+              {time}
+            </span>
+              <button
+                onClick={() => speakingId === msgId ? onStop() : onSpeak(text, msgId)}
+                style={{
+                  background: 'none', border: 'none', cursor: 'pointer',
+                  fontSize: '13px', padding: '0 2px',
+                  color: speakingId === msgId ? 'var(--color-primary)' : 'var(--color-on-surface-variant)',
+                }}
+              >
+                {speakingId === msgId ? '⏹' : '🔊'}
+              </button>
+          </div>
     </div>
   )
 }
@@ -431,7 +448,7 @@ function Chat() {
       setInput(prev => prev ? `${prev} ${transcript}` : transcript)
     }
   })
-  const { isSpeaking, speak, stop } = useTextToSpeech()
+  const { speakingId, speak, stop } = useTextToSpeech()
 
   useEffect(() => {
     if (!inputBarRef.current) return
@@ -488,7 +505,7 @@ function Chat() {
           suggestion: `وديني ${gateName}`,
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text)
+        speak(botMessage.text, botMessage.id)
       } else {
         const navigation = data.data?.navigation
         const route = data.data?.route
@@ -508,7 +525,7 @@ function Chat() {
           routeTime: formatTime(route?.total_time),
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text)
+        speak(botMessage.text, botMessage.id)
       }
     } catch {
       setMessages(prev => [...prev, {
@@ -517,7 +534,7 @@ function Chat() {
         text: 'Sorry, something went wrong. Please try again.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }])
-      speak('اسف، حصل خطأ. حاول مرة تاني.')
+      speak('اسف، حصل خطأ. حاول مرة تاني.', Date.now()  )
     } finally {
       setIsTyping(false)
     }
@@ -590,6 +607,10 @@ function Chat() {
               onSuggestionClick={handleSuggestionClick}
               distance={msg.distance}
               routeTime={msg.routeTime}
+              msgId={msg.id}
+              speakingId={speakingId}
+              onSpeak={speak}
+              onStop={stop}
             />
           ) : (
             <UserMessage
