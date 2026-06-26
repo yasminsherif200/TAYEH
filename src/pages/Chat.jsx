@@ -5,6 +5,7 @@ import BottomNav from '../components/BottomNav'
 import useWindowSize from '../hooks/useWindowSize'
 import useUserLocation from '../hooks/useLocation'
 import useSpeechRecognition from '../hooks/useSpeechRecognition'
+import useTextToSpeech from '../hooks/useTextToSpeech'
 import { sendMessage } from '../services/api'
 
 // helpers
@@ -430,6 +431,7 @@ function Chat() {
       setInput(prev => prev ? `${prev} ${transcript}` : transcript)
     }
   })
+  const { isSpeaking, speak, stop } = useTextToSpeech()
 
   useEffect(() => {
     if (!inputBarRef.current) return
@@ -486,6 +488,7 @@ function Chat() {
           suggestion: `وديني ${gateName}`,
         }
         setMessages(prev => [...prev, botMessage])
+        speak(botMessage.text)
       } else {
         const navigation = data.data?.navigation
         const route = data.data?.route
@@ -505,6 +508,7 @@ function Chat() {
           routeTime: formatTime(route?.total_time),
         }
         setMessages(prev => [...prev, botMessage])
+        speak(botMessage.text)
       }
     } catch {
       setMessages(prev => [...prev, {
@@ -513,6 +517,7 @@ function Chat() {
         text: 'Sorry, something went wrong. Please try again.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }])
+      speak('اسف، حصل خطأ. حاول مرة تاني.')
     } finally {
       setIsTyping(false)
     }
@@ -526,6 +531,7 @@ function Chat() {
       time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     }
     setMessages(prev => [...prev, userMessage])
+
     handleBotReply(suggestionText)
   }
 
