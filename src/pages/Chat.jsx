@@ -497,7 +497,7 @@ function Chat() {
       const requiresConfirmation = data.data?.requires_confirmation
       const gateName = data.data?.transport?.place?.name
 
-      if (requiresConfirmation && gateName) {
+          if (requiresConfirmation && gateName) {
         const botMessage = {
           id: Date.now(),
           sender: 'bot',
@@ -506,7 +506,24 @@ function Chat() {
           suggestion: `وديني ${gateName}`,
         }
         setMessages(prev => [...prev, botMessage])
-        // speak(botMessage.text, botMessage.id)
+        speak(botMessage.text, botMessage.id)
+
+      } else if (data.data?.type === 'recommendation') {
+        const { assistant_message, places } = data.data
+
+        const placesList = places
+          .map((p, i) => `• ${p.name}${p.rating ? ` ⭐ ${p.rating}` : ''}`)
+          .join('\n')
+
+        const botMessage = {
+          id: Date.now(),
+          sender: 'bot',
+          text: `${assistant_message}\n\n${placesList}`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        }
+        setMessages(prev => [...prev, botMessage])
+        speak(botMessage.text, botMessage.id)
+
       } else {
         const navigation = data.data?.navigation
         const route = data.data?.route
@@ -526,7 +543,7 @@ function Chat() {
           routeTime: formatTime(route?.total_time),
         }
         setMessages(prev => [...prev, botMessage])
-        // speak(botMessage.text, botMessage.id)
+        speak(botMessage.text, botMessage.id)
       }
     } catch {
       setMessages(prev => [...prev, {
