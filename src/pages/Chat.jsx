@@ -574,7 +574,6 @@ function Chat() {
           suggestion: `وديني ${gateName}`,
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text, botMessage.id)
 
       }  else if (data.data?.type === 'recommendation') {
         const { assistant_message, places } = data.data
@@ -586,7 +585,6 @@ function Chat() {
           places: places,   // Store the places in the bot message
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text, botMessage.id)
 
       } else {
         const navigation = data.data?.navigation
@@ -607,7 +605,6 @@ function Chat() {
           routeTime: formatTime(route?.total_time),
         }
         setMessages(prev => [...prev, botMessage])
-        speak(botMessage.text, botMessage.id)
       }
     } catch {
       setMessages(prev => [...prev, {
@@ -616,7 +613,6 @@ function Chat() {
         text: 'Sorry, something went wrong. Please try again.',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }])
-      // speak('اسف، حصل خطأ. حاول مرة تاني.', Date.now()  )
     } finally {
       setIsTyping(false)
     }
