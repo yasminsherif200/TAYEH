@@ -149,7 +149,7 @@ function StepBlock({ index, content }) {
   )
 }
 
-function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime, msgId, speakingId, onSpeak, onStop }) {
+function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime, msgId, speakingId, onSpeak, onStop, places, hoveredPlace, setHoveredPlace, onNavigate }) {
   const blocks = parseBotMessage(text)
   const hasSteps = blocks.some(b => b.type === 'step')
   const rtl = isArabic(text)
@@ -323,6 +323,73 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, dista
                 {speakingId === msgId ? '⏹' : '🔊'}
               </button>
           </div>
+          {/* If the bot message contains places(recommendations), display them as buttons */}
+           {places && places.length > 0 && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '12px' }}>
+          {places.map((place) => (
+            <div
+              key={place.id}
+              onMouseEnter={() => setHoveredPlace(place.id)}
+              onMouseLeave={() => setHoveredPlace(null)}
+              style={{
+                position: 'relative',
+                backgroundColor: hoveredPlace === place.id
+                  ? 'var(--color-surface-container-high)'
+                  : 'var(--color-surface)',
+                border: '1px solid var(--color-outline-variant)',
+                borderRadius: 'var(--radius-md)',
+                padding: '10px 14px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                transform: hoveredPlace === place.id ? 'scale(1.01)' : 'scale(1)',
+                boxShadow: hoveredPlace === place.id ? 'var(--shadow-md)' : 'var(--shadow-sm)',
+              }}
+              onClick={() => onNavigate(place.name)}
+            >
+              {/* place name and rating */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{
+                  fontSize: '13px',
+                  fontWeight: '600',
+                  color: 'var(--color-on-surface)',
+                  direction: 'rtl',
+                }}>
+                  {place.name}
+                </span>
+                {place.rating && (
+                  <span style={{
+                    fontSize: '11px',
+                    fontFamily: 'JetBrains Mono',
+                    color: 'var(--color-on-surface-variant)',
+                  }}>
+                    ⭐ {place.rating}
+                  </span>
+                )}
+              </div>
+
+              {/* on hover */}
+              {hoveredPlace === place.id && (
+                <div style={{
+                  marginTop: '8px',
+                  display: 'flex',
+                  justifyContent: 'flex-end',
+                }}>
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    color: 'var(--color-primary)',
+                    fontFamily: 'JetBrains Mono',
+                    borderBottom: '1px solid var(--color-primary)',
+                    paddingBottom: '1px',
+                  }}>
+                    وديني ←
+                  </span>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -450,6 +517,7 @@ function Chat() {
     }
   })
   const { speakingId, speak, stop } = useTextToSpeech()
+  const [hoveredPlace, setHoveredPlace] = useState(null)
 
   useEffect(() => {
     if (!inputBarRef.current) return
@@ -508,18 +576,14 @@ function Chat() {
         setMessages(prev => [...prev, botMessage])
         speak(botMessage.text, botMessage.id)
 
-      } else if (data.data?.type === 'recommendation') {
+      }  else if (data.data?.type === 'recommendation') {
         const { assistant_message, places } = data.data
-
-        const placesList = places
-          .map((p, i) => `• ${p.name}${p.rating ? ` ⭐ ${p.rating}` : ''}`)
-          .join('\n')
-
         const botMessage = {
           id: Date.now(),
           sender: 'bot',
-          text: `${assistant_message}\n\n${placesList}`,
+          text: assistant_message,
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          places: places,   // Store the places in the bot message
         }
         setMessages(prev => [...prev, botMessage])
         speak(botMessage.text, botMessage.id)
@@ -629,6 +693,19 @@ function Chat() {
               speakingId={speakingId}
               onSpeak={speak}
               onStop={stop}
+              places={msg.places}                          
+              hoveredPlace={hoveredPlace}                
+              setHoveredPlace={setHoveredPlace}            
+              onNavigate={(name) => {                      
+                const userMessage = {
+                  id: Date.now(),
+                  sender: 'user',
+                  text: `وديني ${name}`,
+                  time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                }
+                setMessages(prev => [...prev, userMessage])
+                handleBotReply(`وديني ${name}`)
+              }}
             />
           ) : (
             <UserMessage
