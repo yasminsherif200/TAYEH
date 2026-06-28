@@ -594,7 +594,9 @@ function Chat() {
 
         const botText = directions.length > 0
           ? `${summary}\n\n${directions.map(d => `• ${d}`).join('\n')}`
-          : data.message || 'Sorry, I could not process that.'
+          : data.message?.toLowerCase().includes('not found')
+          ? 'معرفتش ألاقي المكان ده 🤔\nجرب تكتبه بطريقة تانية، أو اسألني عن أقرب مكان ليه'
+          : data.message || 'مش فاهمك، ممكن تعيد صياغته ب اسم تاني؟'
 
         const botMessage = {
           id: Date.now(),
