@@ -591,10 +591,11 @@ function Chat() {
         const route = data.data?.route
         const summary = navigation?.summary || ''
         const directions = navigation?.directions || []
+        const isNoTransport = data.status === 400 && data.message?.includes('وسيلة مواصلات')
 
         const botText = directions.length > 0
           ? `${summary}\n\n${directions.map(d => `• ${d}`).join('\n')}`
-          : data.status === 400 && data.message?.includes('وسيلة مواصلات')
+          : isNoTransport
           ? 'مفيش مواصلات متاحة للمكان ده مباشرةً 🚇\nبس أنسب حل هو الباب الصغير بتاع المترو ومنها تشوف اقرب محطة مترو ليك '
           : data.message?.toLowerCase().includes('not found')
           ? 'معرفتش ألاقي المكان ده 🤔\nجرب تكتبه بطريقة تانية، أو اسألني عن أقرب مكان ليه'
