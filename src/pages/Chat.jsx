@@ -561,6 +561,7 @@ function Chat() {
         userLocation.lat,
         userLocation.lng
       )
+      console.log('Full response:', JSON.stringify(data, null, 2)) 
 
       const requiresConfirmation = data.data?.requires_confirmation
       const gateName = data.data?.transport?.place?.name
@@ -612,7 +613,9 @@ function Chat() {
         }
         setMessages(prev => [...prev, botMessage])
       }
-    } catch {
+    } catch (err) {
+      
+      console.log('Catch error:', err)
       setMessages(prev => [...prev, {
         id: Date.now(),
         sender: 'bot',
