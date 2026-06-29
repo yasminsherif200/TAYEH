@@ -8,4 +8,8 @@ export async function getAnalytics() {
 export async function getPlaces({ page = 1, sort = 'desc' } = {}) {
     const response = await fetch(`${BASE_URL}/api/admin/places?page=${page}&sort=${sort}`)
     return response.json()
-  }
+}
+
+export const uploadDxfFile = async (file) => {
+    // waiting for alaa
+}

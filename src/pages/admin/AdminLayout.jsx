@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { LayoutDashboard, MapPin, ArrowLeft, Menu, X } from 'lucide-react'
+import { LayoutDashboard, MapPin, Upload, ArrowLeft, Menu, X } from 'lucide-react'
 
 const SIDEBAR_BG  = '#1a2410'
 const SIDEBAR_TEXT = '#c8d4b0'
@@ -14,6 +14,7 @@ export default function AdminLayout({ children }) {
   const navItems = [
     { path: '/admin',        label: 'Overview', icon: LayoutDashboard },
     { path: '/admin/places', label: 'Places',   icon: MapPin },
+    { path: '/admin/dxf',    label: 'Maps Upload', icon: Upload},
   ]
 
   const SidebarContent = () => (

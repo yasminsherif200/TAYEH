@@ -4,6 +4,7 @@ import Chat from './pages/Chat'
 import AdminLayout from './pages/admin/AdminLayout'
 import Analytics from './pages/admin/Analytics'
 import Places from './pages/admin/Places'
+import DxfUpload from './pages/admin/DxfUpload'
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/chat" element={<Chat />} />
           <Route path="/admin" element={<Analytics />} />
           <Route path="/admin/places" element={<Places />} />
+          <Route path="/admin/dxf" element={<DxfUpload />} />
         </Routes>
       </div>
     </BrowserRouter>
