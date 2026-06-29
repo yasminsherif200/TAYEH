@@ -96,7 +96,7 @@ function InfoChips({ distance, time, rtl }) {
   return (
     <div style={{
       display: 'flex',
-      flexDirection: rtl ? 'row-reverse' : 'row',
+      flexDirection: 'row',
       gap: '8px',
       flexWrap: 'wrap',
       marginTop: '10px',
@@ -107,37 +107,49 @@ function InfoChips({ distance, time, rtl }) {
   )
 }
 
-function StepBlock({ index, content }) {
+function StepBlock({ index, content, isNumbered }) {
   const rtl = isArabic(content)
   return (
     <div
-      dir={rtl ? 'rtl' : 'ltr'}
+      dir="rtl"
       style={{
         display: 'flex',
         alignItems: 'flex-start',
-        gap: '10px',
-        flexDirection: rtl ? 'row-reverse' : 'row',
-        padding: '8px 0',
-        borderBottom: '1px solid var(--color-outline-variant)',
+        gap: '8px',
+        flexDirection: 'row',
+        padding: isNumbered ? '8px 0' : '4px 0',
+        borderBottom: isNumbered ? '1px solid var(--color-outline-variant)' : 'none',
       }}
     >
-      <div style={{
-        minWidth: '24px',
-        height: '24px',
-        borderRadius: '50%',
-        backgroundColor: 'var(--color-primary)',
-        color: 'var(--color-on-primary)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: '11px',
-        fontWeight: 700,
-        fontFamily: 'JetBrains Mono',
-        flexShrink: 0,
-        marginTop: '1px',
-      }}>
-        {index}
-      </div>
+      {isNumbered ? (
+        <div style={{
+          minWidth: '24px',
+          height: '24px',
+          borderRadius: '50%',
+          backgroundColor: 'var(--color-primary)',
+          color: 'var(--color-on-primary)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '11px',
+          fontWeight: 700,
+          fontFamily: 'JetBrains Mono',
+          flexShrink: 0,
+          marginTop: '1px',
+        }}>
+          {index}
+        </div>
+      ) : (
+        <span style={{
+          color: 'var(--color-primary)',
+          fontSize: '16px',
+          lineHeight: '1.4',
+          flexShrink: 0,
+          marginTop: '1px',
+        }}>
+          •
+        </span>
+      )}
       <span style={{
         fontSize: '13px',
         lineHeight: '1.6',
@@ -149,7 +161,7 @@ function StepBlock({ index, content }) {
   )
 }
 
-function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime, msgId, speakingId, onSpeak, onStop, places, hoveredPlace, setHoveredPlace, onNavigate }) {
+function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, distance, routeTime, msgId, speakingId, onSpeak, onStop, places, hoveredPlace, setHoveredPlace, onNavigate, isNumbered }) {
   const blocks = parseBotMessage(text)
   const hasSteps = blocks.some(b => b.type === 'step')
   const rtl = isArabic(text)
@@ -245,6 +257,7 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, dista
                 key={i}
                 index={block.index}
                 content={block.content}
+                isNumbered={isNumbered}
               />
             )
           }
@@ -646,6 +659,7 @@ function Chat() {
           distance: formatDistance(route?.total_distance),
           routeTime: formatTime(route?.total_time),
           suggestion: isNoTransport ? 'وديني الباب الصغير' : null,
+          isNumbered: directions.length > 0,
         }
         setMessages(prev => [...prev, botMessage])
       }
@@ -736,7 +750,8 @@ function Chat() {
               onStop={stop}
               places={msg.places}                          
               hoveredPlace={hoveredPlace}                
-              setHoveredPlace={setHoveredPlace}            
+              setHoveredPlace={setHoveredPlace} 
+              isNumbered={msg.isNumbered}           
               onNavigate={(name) => {                      
                 const userMessage = {
                   id: Date.now(),
