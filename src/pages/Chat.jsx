@@ -182,7 +182,7 @@ function BotMessage({ text, time, isMobile, suggestion, onSuggestionClick, dista
         display: 'flex',
         alignItems: 'center',
         gap: '6px',
-        flexDirection: rtl ? 'row-reverse' : 'row',
+        flexDirection: 'row',
         marginBottom: '4px',
       }}>
         <div style={{
