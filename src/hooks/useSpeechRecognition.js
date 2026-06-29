@@ -18,13 +18,14 @@ function useSpeechRecognition({ onResult }) {
     recognition.lang = 'ar-EG'
     recognition.interimResults = false
     recognition.maxAlternatives = 1
+    recognition.continuous = true
 
     recognition.onstart = () => {
       setIsListening(true)
     }
 
     recognition.onresult = (event) => {
-      const transcript = event.results[0][0].transcript
+      const transcript = event.results[event.results.length - 1][0].transcript
       onResult(transcript)
     }
 
