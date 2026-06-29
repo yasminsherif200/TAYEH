@@ -587,7 +587,32 @@ function Chat() {
         }
         setMessages(prev => [...prev, botMessage])
 
+        } else if (data.data?.type === 'search_place') {
+      const place = data.data.place
+      const isToilet = place.type === 'toilet'
+
+      if (isToilet) {
+        const botMessage = {
+          id: Date.now(),
+          sender: 'bot',
+          text: 'عايز/ة حمام بنات ولا ولاد؟ 🚻',
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          places: [
+            { id: 'girls', name: 'حمام بنات', rating: null },
+            { id: 'boys', name: 'حمام ولاد', rating: null },
+          ],
+        }
+        setMessages(prev => [...prev, botMessage])
       } else {
+        const botMessage = {
+          id: Date.now(),
+          sender: 'bot',
+          text: `لقيت "${place.name}" 📍`,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          suggestion: `وديني ${place.name}`,
+        }
+        setMessages(prev => [...prev, botMessage])
+      }} else {
         const navigation = data.data?.navigation
         const route = data.data?.route
         const summary = navigation?.summary || ''
