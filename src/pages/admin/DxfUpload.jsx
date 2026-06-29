@@ -11,7 +11,6 @@ const BORDER  = '#deded0'
 const MUTED   = '#6b7358'
 const BEIGE   = '#fbfbe2'
 
-// Per-file status: idle | uploading | success | error
 function getStatusColor(status) {
   if (status === 'success') return '#2d7a3a'
   if (status === 'error')   return '#c0392b'
@@ -43,7 +42,6 @@ function FileRow({ file, onRemove }) {
     onMouseEnter={e => { if (status === 'idle') e.currentTarget.style.background = SURFACE }}
     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
-      {/* Icon */}
       <div style={{
         width: '28px', height: '28px',
         borderRadius: '6px',
@@ -54,7 +52,6 @@ function FileRow({ file, onRemove }) {
         <FileCode size={14} color={PRIMARY} />
       </div>
 
-      {/* Name + meta */}
       <div style={{ overflow: 'hidden' }}>
         <div style={{
           fontSize: '13px', fontWeight: '600',
@@ -76,12 +73,10 @@ function FileRow({ file, onRemove }) {
         </div>
       </div>
 
-      {/* Status icon */}
       <div style={{ display: 'flex', alignItems: 'center' }}>
         <StatusIcon />
       </div>
 
-      {/* Remove button — only when not uploading */}
       {status !== 'uploading' && (
         <button
           onClick={() => onRemove(file.id)}
@@ -165,7 +160,6 @@ export default function DxfUpload() {
     <AdminLayout>
       <style>{STYLES}</style>
 
-      {/* ── Hero header ── */}
       <div
         className="dxf-hero"
         style={{
@@ -204,10 +198,8 @@ export default function DxfUpload() {
         </p>
       </div>
 
-      {/* ── Content ── */}
       <div className="dxf-content">
 
-        {/* Drop zone */}
         <div
           className={`drop-zone${dragging ? ' drop-zone--active' : ''}`}
           onDragOver={e => { e.preventDefault(); setDragging(true) }}
@@ -258,7 +250,6 @@ export default function DxfUpload() {
           </div>
         </div>
 
-        {/* File list */}
         {files.length > 0 && (
           <div style={{
             backgroundColor: '#fff',
@@ -268,7 +259,6 @@ export default function DxfUpload() {
             marginBottom: '20px',
             boxShadow: '0 1px 4px rgba(62,82,25,0.06)',
           }}>
-            {/* Card header */}
             <div style={{
               padding: '14px 20px 12px',
               borderBottom: `1px solid ${BORDER}`,
@@ -291,12 +281,10 @@ export default function DxfUpload() {
               </div>
             </div>
 
-            {/* Rows */}
             {files.map(f => (
               <FileRow key={f.id} file={f} onRemove={removeFile} />
             ))}
 
-            {/* Footer actions */}
             <div style={{
               padding: '12px 20px',
               borderTop: `1px solid ${BORDER}`,
@@ -356,7 +344,6 @@ export default function DxfUpload() {
           </div>
         )}
 
-        {/* Empty hint */}
         {files.length === 0 && (
           <div style={{
             textAlign: 'center',
