@@ -569,7 +569,7 @@ function Chat() {
         const botMessage = {
           id: Date.now(),
           sender: 'bot',
-          text: data.data.message,
+          text: `أقرب بوابة للمكان اللي عايزه هي "${gateName}" 🚪\nتحبي أوصلك هناك؟`,  
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           suggestion: `وديني ${gateName}`,
         }
@@ -594,6 +594,8 @@ function Chat() {
 
         const botText = directions.length > 0
           ? `${summary}\n\n${directions.map(d => `• ${d}`).join('\n')}`
+          : data.status === 400 && data.message?.includes('وسيلة مواصلات')
+          ? 'مفيش مواصلات متاحة للمكان ده مباشرةً 🚇\nبس أنسب حل هو الباب الصغير بتاع المترو ومنها تشوف اقرب محطة مترو ليك '
           : data.message?.toLowerCase().includes('not found')
           ? 'معرفتش ألاقي المكان ده 🤔\nجرب تكتبه بطريقة تانية، أو اسألني عن أقرب مكان ليه'
           : data.message || 'مش فاهمك، ممكن تعيد صياغته ب اسم تاني؟'
@@ -605,6 +607,7 @@ function Chat() {
           time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           distance: formatDistance(route?.total_distance),
           routeTime: formatTime(route?.total_time),
+          suggestion: isNoTransport ? 'وديني الباب الصغير' : null,
         }
         setMessages(prev => [...prev, botMessage])
       }
