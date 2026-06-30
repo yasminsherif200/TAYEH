@@ -610,32 +610,57 @@ function Chat() {
           places: places,   // Store the places in the bot message
         }
         setMessages(prev => [...prev, botMessage])
+      } else if (data.data?.type === 'where_am_i') {
+        const { is_outside_campus, distance, place } = data.data
 
+        let text, suggestion
+
+        if (is_outside_campus) {
+          text = `أنت دلوقتي برّه الحرم الجامعي 🗺️\nعلى بُعد ${Math.round(distance)} متر`
+          suggestion = 'وديني أقرب بوابة'
+        } else if (place) {
+          text = distance <= 15
+            ? `أنت دلوقتي عند ${place.name} 📍`
+            : `أنت قريب من ${place.name} 📍\nعلى بُعد ${Math.round(distance)} متر`
+          suggestion = `وديني ${place.name}`
+        } else {
+          text = data.message || 'تحديد موقعك...'
+          suggestion = null
+        }
+
+        const botMessage = {
+          id: Date.now(),
+          sender: 'bot',
+          text,
+          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          suggestion,
+        }
+        setMessages(prev => [...prev, botMessage])
         } else if (data.data?.type === 'search_place') {
       const place = data.data.place
       const isToilet = place.type === 'toilet'
 
-      if (isToilet) {
-        const botMessage = {
-          id: Date.now(),
-          sender: 'bot',
-          text: 'عايز/ة حمام بنات ولا ولاد؟ 🚻',
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          places: [
-            { id: 'girls', name: 'حمام بنات', rating: null },
-            { id: 'boys', name: 'حمام ولاد', rating: null },
-          ],
-        }
-        setMessages(prev => [...prev, botMessage])
-      } else {
-        const botMessage = {
-          id: Date.now(),
-          sender: 'bot',
-          text: `لقيت "${place.name}" 📍`,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          suggestion: `وديني ${place.name}`,
-        }
-        setMessages(prev => [...prev, botMessage])
+        if (isToilet) {
+          const botMessage = {
+            id: Date.now(),
+            sender: 'bot',
+            text: 'عايز/ة حمام بنات ولا ولاد؟ 🚻',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            places: [
+              { id: 'girls', name: 'حمام بنات', rating: null },
+              { id: 'boys', name: 'حمام ولاد', rating: null },
+            ],
+          }
+          setMessages(prev => [...prev, botMessage])
+        } else {
+          const botMessage = {
+            id: Date.now(),
+            sender: 'bot',
+            text: `لقيت "${place.name}" 📍`,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            suggestion: `وديني ${place.name}`,
+          }
+          setMessages(prev => [...prev, botMessage])
       }} else {
         const navigation = data.data?.navigation
         const route = data.data?.route
