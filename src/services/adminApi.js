@@ -10,6 +10,11 @@ export async function getPlaces({ page = 1, sort = 'desc' } = {}) {
     return response.json()
 }
 
+export async function getPlaceById(id) {
+    const response = await fetch(`${BASE_URL}/api/admin/places/${id}`)
+    return response.json()
+}
+
 export async function uploadDxfFile(file) {
     const formData = new FormData()
     formData.append('file', file)
@@ -20,10 +25,10 @@ export async function uploadDxfFile(file) {
     })
   
     const data = await response.json()
-  
+
     if (!response.ok || data.status >= 400) {
       throw new Error(data.message || 'Upload failed')
     }
   
     return data
-  }
+}

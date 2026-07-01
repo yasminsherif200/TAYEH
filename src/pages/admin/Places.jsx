@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import AdminLayout from './AdminLayout'
-import { getPlaces } from '../../services/adminApi'
+import { getPlaces, getPlaceById } from '../../services/adminApi'
+import { createPortal } from 'react-dom'
 
 const PRIMARY = '#3e5219'
 const SAGE    = '#d0eba1'
@@ -31,23 +32,28 @@ const STYLES = `
     0%,100% { opacity:1; }
     50%      { opacity:0.4; }
   }
+  @keyframes modalIn {
+    from { opacity:0; transform: scale(0.96) translateY(8px); }
+    to   { opacity:1; transform: scale(1) translateY(0); }
+  }
   .pl-hero  { padding: 32px 36px 36px; }
   .pl-body  { padding: 28px 36px; }
   .pl-hero h1 { font-size: 28px; }
   .pl-table-row {
     display: grid;
-    grid-template-columns: 48px 1fr 120px 80px;
+    grid-template-columns: 48px 1fr 120px 80px 80px;
     align-items: center;
     gap: 12px;
     padding: 13px 22px;
+    cursor: default;
   }
-  .pl-col-type  { display: block; }
+  .pl-col-type { display: block; }
   @media (max-width: 600px) {
     .pl-hero  { padding: 20px 16px 24px; }
     .pl-body  { padding: 16px; }
     .pl-hero h1 { font-size: 22px; }
     .pl-table-row {
-      grid-template-columns: 36px 1fr 60px;
+      grid-template-columns: 36px 1fr 60px 60px;
       gap: 8px;
       padding: 11px 14px;
     }
@@ -55,12 +61,98 @@ const STYLES = `
   }
 `
 
-function Skel({ width = '100%', height = '40px', light, delay = 0, s }) {
+function ActionMenu({ onView }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{
+          background: 'none',
+          border: `1px solid ${BORDER}`,
+          borderRadius: '6px',
+          padding: '4px 10px',
+          fontSize: '10px',
+          cursor: 'pointer',
+          color: MUTED,
+          fontFamily: "'JetBrains Mono', monospace",
+          transition: 'all 0.15s',
+          letterSpacing: '0.1em',
+        }}
+        onMouseEnter={e => {
+          e.currentTarget.style.backgroundColor = SURFACE
+          e.currentTarget.style.borderColor = PRIMARY
+        }}
+        onMouseLeave={e => {
+          e.currentTarget.style.backgroundColor = 'transparent'
+          e.currentTarget.style.borderColor = BORDER
+        }}
+      >
+        ...
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute',
+          right: 0,
+          top: 'calc(100% + 6px)',
+          backgroundColor: '#fff',
+          border: `1px solid ${BORDER}`,
+          borderRadius: '10px',
+          boxShadow: '0 8px 24px rgba(26,36,16,0.12)',
+          zIndex: 100,
+          minWidth: '140px',
+          overflow: 'hidden',
+        }}>
+          {[
+            { label: 'View',   action: () => { onView();  setOpen(false) }, color: PRIMARY },
+            { label: 'Edit',   action: () => {            setOpen(false) }, color: MUTED   },
+            { label: 'Delete', action: () => {            setOpen(false) }, color: '#c0392b' },
+          ].map(({ label, action, color }) => (
+            <button
+              key={label}
+              onClick={action}
+              style={{
+                display: 'block',
+                width: '100%',
+                padding: '10px 14px',
+                background: 'none',
+                border: 'none',
+                textAlign: 'left',
+                fontSize: '13px',
+                fontFamily: "'JetBrains Mono', monospace",
+                color,
+                cursor: 'pointer',
+                transition: 'background 0.1s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.backgroundColor = SURFACE}
+              onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function Skel({ width = '100%', height = '40px', delay = 0, s }) {
   return (
     <div style={{
       width, height,
       borderRadius: '8px',
-      backgroundColor: light ? 'rgba(255,255,255,0.08)' : '#e8e8d8',
+      backgroundColor: '#e8e8d8',
       animation: `skPulse 1.6s ease-in-out ${delay}s infinite`,
       ...s,
     }} />
@@ -111,14 +203,388 @@ function PageButton({ page, current, onClick }) {
   )
 }
 
-export default function Places() {
-  const [data, setData]       = useState([])
-  const [meta, setMeta]       = useState(null)
+function StatBox({ label, value }) {
+  return (
+    <div style={{
+      flex: '1 1 80px',
+      backgroundColor: SURFACE,
+      border: `1px solid ${BORDER}`,
+      borderRadius: '10px',
+      padding: '12px 14px',
+      textAlign: 'center',
+    }}>
+      <div style={{
+        fontSize: '20px',
+        fontWeight: '700',
+        fontFamily: "'JetBrains Mono', monospace",
+        color: PRIMARY,
+        lineHeight: 1,
+      }}>
+        {value ?? '—'}
+      </div>
+      <div style={{
+        fontSize: '10px',
+        fontFamily: "'JetBrains Mono', monospace",
+        color: MUTED,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        marginTop: '4px',
+      }}>
+        {label}
+      </div>
+    </div>
+  )
+}
+
+function PlaceModal({ placeId, onClose }) {
+  const [data, setData]       = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState(null)
-  const [page, setPage]       = useState(1)
-  const [sort, setSort]       = useState('desc')
+
+  useEffect(() => {
+    getPlaceById(placeId)
+      .then(res => {
+        console.log('Place response:', res)
+        if (res.status === 200) setData(res.data)
+        else setError('Could not load place details.')
+      })
+      .catch((err) => {
+        console.log('Place error:', err) 
+        setError('Could not reach the server.')
+      })
+      .finally(() => setLoading(false))
+
+    // close on Escape
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [placeId])
+
+  const arabic = data ? /[\u0600-\u06FF]/.test(data.name) : false
+
+  return (
+    <>
+      {/* Overlay */}
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(26,36,16,0.5)',
+          zIndex: 400,
+          backdropFilter: 'blur(2px)',
+        }}
+      />
+
+      {/* Modal */}
+      <div style={{
+        position: 'fixed',
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%',
+        maxWidth: '560px',
+        maxHeight: '85vh',
+        backgroundColor: '#fff',
+        borderRadius: '16px',
+        zIndex: 401,
+        overflowY: 'auto',
+        boxShadow: '0 20px 60px rgba(26,36,16,0.25)',
+        animation: 'modalIn 0.2s ease',
+      }}>
+
+        {/* Modal Header */}
+        <div style={{
+          padding: '20px 24px 16px',
+          borderBottom: `1px solid ${BORDER}`,
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '12px',
+          position: 'sticky',
+          top: 0,
+          backgroundColor: '#fff',
+          zIndex: 1,
+        }}>
+          <div>
+            {loading ? (
+              <Skel width="200px" height="22px" />
+            ) : (
+              <>
+                <h2 style={{
+                  margin: 0,
+                  fontSize: '17px',
+                  fontWeight: '700',
+                  color: '#1b1d0e',
+                  direction: arabic ? 'rtl' : 'ltr',
+                  lineHeight: 1.3,
+                }}>
+                  {data?.name}
+                </h2>
+                {data?.type && (
+                  <div style={{ marginTop: '6px' }}>
+                    <TypeBadge type={data.type} />
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              fontSize: '20px',
+              color: MUTED,
+              padding: '2px 6px',
+              borderRadius: '6px',
+              flexShrink: 0,
+              lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div style={{ padding: '20px 24px 24px' }}>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                {[...Array(3)].map((_, i) => <Skel key={i} height="64px" delay={i * 0.1} s={{ flex: 1 }} />)}
+              </div>
+              <Skel height="14px" delay={0.2} />
+              <Skel height="14px" delay={0.25} s={{ width: '80%' }} />
+              <Skel height="40px" delay={0.3} />
+            </div>
+          ) : error ? (
+            <div style={{
+              padding: '20px',
+              textAlign: 'center',
+              color: '#c00',
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: '13px',
+            }}>
+              ⚠️ {error}
+            </div>
+          ) : (
+            <>
+              {/* Stats row */}
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', flexWrap: 'wrap' }}>
+                <StatBox label="Requests" value={data.requests} />
+                <StatBox label="Rating"   value={data.rating ? `${data.rating}★` : '—'} />
+                <StatBox label="Reviews"  value={data.reviews_count} />
+                <StatBox label="Zone"     value={data.zone} />
+              </div>
+
+              {/* Description */}
+              {data.description && (
+                <div style={{ marginBottom: '20px' }}>
+                  <p style={{
+                    margin: '0 0 6px',
+                    fontSize: '11px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: MUTED,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}>
+                    Description
+                  </p>
+                  <p style={{
+                    margin: 0,
+                    fontSize: '13px',
+                    color: '#1b1d0e',
+                    lineHeight: '1.6',
+                  }}>
+                    {data.description}
+                  </p>
+                </div>
+              )}
+
+              {/* Coordinates */}
+              <div style={{ marginBottom: '20px' }}>
+                <p style={{
+                  margin: '0 0 6px',
+                  fontSize: '11px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  color: MUTED,
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                }}>
+                  Coordinates
+                </p>
+                <div style={{
+                  display: 'flex',
+                  gap: '10px',
+                  flexWrap: 'wrap',
+                }}>
+                  <span style={{
+                    fontSize: '12px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: PRIMARY,
+                    backgroundColor: SURFACE,
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: `1px solid ${BORDER}`,
+                  }}>
+                    latitude: {data.latitude}
+                  </span>
+                  <span style={{
+                    fontSize: '12px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: PRIMARY,
+                    backgroundColor: SURFACE,
+                    padding: '4px 10px',
+                    borderRadius: '6px',
+                    border: `1px solid ${BORDER}`,
+                  }}>
+                    longitude: {data.longitude}
+                  </span>
+                </div>
+              </div>
+
+              {/* Aliases */}
+              {data.aliases?.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <p style={{
+                    margin: '0 0 8px',
+                    fontSize: '11px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: MUTED,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}>
+                    Aliases
+                  </p>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {data.aliases.map((alias, i) => (
+                      <span key={i} style={{
+                        fontSize: '12px',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        backgroundColor: SAGE + '30',
+                        color: PRIMARY,
+                        border: `1px solid ${SAGE}`,
+                        borderRadius: '99px',
+                        padding: '3px 10px',
+                        direction: /[\u0600-\u06FF]/.test(alias.name) ? 'rtl' : 'ltr',
+                      }}>
+                        {alias.alias || alias.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Tags */}
+              {data.tags?.length > 0 && (
+                <div style={{ marginBottom: '20px' }}>
+                  <p style={{
+                    margin: '0 0 8px',
+                    fontSize: '11px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: MUTED,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}>
+                    Tags
+                  </p>
+                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                    {data.tags.map((tag, i) => (
+                      <span key={i} style={{
+                        fontSize: '12px',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        backgroundColor: SURFACE,
+                        color: MUTED,
+                        border: `1px solid ${BORDER}`,
+                        borderRadius: '99px',
+                        padding: '3px 10px',
+                      }}>
+                        {tag.tag || tag.name || tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Transportation points */}
+              {data.transportation_points?.length > 0 && (
+                <div>
+                  <p style={{
+                    margin: '0 0 8px',
+                    fontSize: '11px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: MUTED,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}>
+                    Transportation
+                  </p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    {data.transportation_points.map((tp, i) => (
+                      <div key={i} style={{
+                        fontSize: '12px',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        backgroundColor: SURFACE,
+                        border: `1px solid ${BORDER}`,
+                        borderRadius: '8px',
+                        padding: '8px 12px',
+                        color: '#1b1d0e',
+                      }}>
+                        {tp.name || tp.type || tp}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Footer with weighted score */}
+              {data.weighted_score != null && (
+                <div style={{
+                  marginTop: '20px',
+                  paddingTop: '16px',
+                  borderTop: `1px solid ${BORDER}`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: MUTED,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                  }}>
+                    Weighted Score
+                  </span>
+                  <span style={{
+                    fontSize: '14px',
+                    fontWeight: '700',
+                    fontFamily: "'JetBrains Mono', monospace",
+                    color: PRIMARY,
+                  }}>
+                    {data.weighted_score.toFixed(3)}
+                  </span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
+export default function Places() {
+  const [data, setData]             = useState([])
+  const [meta, setMeta]             = useState(null)
+  const [loading, setLoading]       = useState(true)
+  const [error, setError]           = useState(null)
+  const [page, setPage]             = useState(1)
+  const [sort, setSort]             = useState('desc')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [selectedId, setSelectedId] = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -153,6 +619,16 @@ export default function Places() {
     <AdminLayout>
       <style>{STYLES}</style>
 
+      {/* Modal */}
+      {selectedId && createPortal(
+        <PlaceModal
+          placeId={selectedId}
+          onClose={() => setSelectedId(null)}
+        />,
+        document.body
+      )}
+
+      {/* Hero */}
       <div
         className="pl-hero"
         style={{
@@ -189,8 +665,10 @@ export default function Places() {
         </p>
       </div>
 
+      {/* Body */}
       <div className="pl-body">
 
+        {/* Controls */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
@@ -199,7 +677,6 @@ export default function Places() {
           gap: '12px',
           marginBottom: '20px',
         }}>
-          {/*filter */}
           <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
             {allTypes.map(t => (
               <button
@@ -224,7 +701,6 @@ export default function Places() {
             ))}
           </div>
 
-          {/* Sort */}
           <button
             onClick={() => { setSort(s => s === 'desc' ? 'asc' : 'desc'); setPage(1) }}
             style={{
@@ -256,14 +732,16 @@ export default function Places() {
           boxShadow: '0 1px 4px rgba(62,82,25,0.06)',
           marginBottom: '20px',
         }}>
+          {/* Header */}
           <div
             className="pl-table-row"
             style={{
               backgroundColor: SURFACE,
               borderBottom: `1px solid ${BORDER}`,
+              cursor: 'default',
             }}
           >
-            {['#', 'Name', 'Type', 'Visits'].map(h => (
+            {['#', 'Name', 'Type', 'Visits', 'Actions'].map(h => (
               <span key={h} style={{
                 fontSize: '10px',
                 fontFamily: "'JetBrains Mono', monospace",
@@ -311,6 +789,7 @@ export default function Places() {
                 <div
                   key={place.id}
                   className="pl-table-row"
+                  // onClick={() => setSelectedId(place.id)}
                   style={{
                     borderBottom: i < filtered.length - 1 ? `1px solid ${BORDER}` : 'none',
                     transition: 'background 0.1s',
@@ -330,7 +809,7 @@ export default function Places() {
                     fontSize: '13px',
                     fontWeight: '500',
                     color: '#1b1d0e',
-                    direction: arabic ? 'rtl' : 'ltr',
+                    direction: 'ltr',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
@@ -350,12 +829,18 @@ export default function Places() {
                   }}>
                     {place.requests}
                   </span>
+
+                  {/* Actions */}
+                  <ActionMenu
+                    onView={() => setSelectedId(place.id)}
+                  />
                 </div>
               )
             })
           )}
         </div>
 
+        {/* Pagination */}
         {meta && meta.last_page > 1 && (
           <div style={{
             display: 'flex',
