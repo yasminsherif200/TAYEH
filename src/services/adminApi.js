@@ -10,6 +10,20 @@ export async function getPlaces({ page = 1, sort = 'desc' } = {}) {
     return response.json()
 }
 
-export const uploadDxfFile = async (file) => {
-    // waiting for alaa
-}
+export async function uploadDxfFile(file) {
+    const formData = new FormData()
+    formData.append('file', file)
+  
+    const response = await fetch(`${BASE_URL}/api/extract-nav`, {
+      method: 'POST',
+      body: formData,
+    })
+  
+    const data = await response.json()
+  
+    if (!response.ok || data.status >= 400) {
+      throw new Error(data.message || 'Upload failed')
+    }
+  
+    return data
+  }

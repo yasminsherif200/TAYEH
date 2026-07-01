@@ -9,11 +9,10 @@ const SAGE    = '#d0eba1'
 const SURFACE = '#efefd7'
 const BORDER  = '#deded0'
 const MUTED   = '#6b7358'
-const BEIGE   = '#fbfbe2'
 
 function getStatusColor(status) {
-  if (status === 'success') return '#2d7a3a'
-  if (status === 'error')   return '#c0392b'
+  if (status === 'success')   return '#2d7a3a'
+  if (status === 'error')     return '#c0392b'
   if (status === 'uploading') return PRIMARY
   return MUTED
 }
@@ -30,17 +29,18 @@ function FileRow({ file, onRemove }) {
   }
 
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '28px 1fr auto auto',
-      alignItems: 'center',
-      gap: '12px',
-      padding: '12px 20px',
-      borderBottom: `1px solid ${BORDER}`,
-      transition: 'background 0.1s',
-    }}
-    onMouseEnter={e => { if (status === 'idle') e.currentTarget.style.background = SURFACE }}
-    onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '28px 1fr auto auto',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '12px 20px',
+        borderBottom: `1px solid ${BORDER}`,
+        transition: 'background 0.1s',
+      }}
+      onMouseEnter={e => { if (status === 'idle') e.currentTarget.style.background = SURFACE }}
+      onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
     >
       <div style={{
         width: '28px', height: '28px',
@@ -98,9 +98,10 @@ function FileRow({ file, onRemove }) {
 }
 
 export default function DxfUpload() {
-  const [files, setFiles]       = useState([])  // { id, name, size, raw, status, error }
+  const [files, setFiles] = useState([])
   const [dragging, setDragging] = useState(false)
-  const inputRef                = useRef(null)
+  const [results, setResults] = useState([])   
+  const inputRef = useRef(null)
 
   const addFiles = useCallback((incoming) => {
     const dxf = Array.from(incoming).filter(f =>
@@ -136,10 +137,16 @@ export default function DxfUpload() {
         f.id === file.id ? { ...f, status: 'uploading' } : f
       ))
       try {
-        await uploadDxfFile(file.raw)
+        const response = await uploadDxfFile(file.raw)
         setFiles(prev => prev.map(f =>
           f.id === file.id ? { ...f, status: 'success' } : f
         ))
+        if (response?.data) {
+          setResults(prev => [
+            ...prev.filter(r => r.fileName !== file.name),
+            { fileName: file.name, ...response.data },
+          ])
+        }
       } catch (err) {
         setFiles(prev => prev.map(f =>
           f.id === file.id
@@ -219,7 +226,6 @@ export default function DxfUpload() {
             style={{ display: 'none' }}
             onChange={e => addFiles(e.target.files)}
           />
-
           <div style={{
             width: '52px', height: '52px',
             borderRadius: '14px',
@@ -231,10 +237,8 @@ export default function DxfUpload() {
           }}>
             <UploadCloud size={26} color={dragging ? PRIMARY : MUTED} />
           </div>
-
           <div style={{
-            fontSize: '14px',
-            fontWeight: '600',
+            fontSize: '14px', fontWeight: '600',
             color: dragging ? PRIMARY : '#1b1d0e',
             marginBottom: '4px',
             transition: 'color 0.2s',
@@ -268,10 +272,7 @@ export default function DxfUpload() {
               flexWrap: 'wrap',
               gap: '8px',
             }}>
-              <h3 style={{
-                margin: 0, fontSize: '13px',
-                fontWeight: '700', color: PRIMARY,
-              }}>
+              <h3 style={{ margin: 0, fontSize: '13px', fontWeight: '700', color: PRIMARY }}>
                 Files queued
               </h3>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -296,7 +297,7 @@ export default function DxfUpload() {
               gap: '10px',
             }}>
               <button
-                onClick={() => setFiles([])}
+                onClick={() => { setFiles([]); setResults([]) }}
                 disabled={isUploading}
                 style={{
                   background: 'none',
@@ -310,7 +311,7 @@ export default function DxfUpload() {
                   opacity: isUploading ? 0.5 : 1,
                   transition: 'all 0.15s',
                 }}
-                onMouseEnter={e => { if (!isUploading) e.currentTarget.style.borderColor = '#c0392b'; e.currentTarget.style.color = '#c0392b' }}
+                onMouseEnter={e => { if (!isUploading) { e.currentTarget.style.borderColor = '#c0392b'; e.currentTarget.style.color = '#c0392b' }}}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.color = MUTED }}
               >
                 Clear all
@@ -357,6 +358,184 @@ export default function DxfUpload() {
           </div>
         )}
 
+        {results.map(result => (
+          <div
+            key={result.fileName}
+            style={{
+              backgroundColor: '#fff',
+              border: `1px solid ${BORDER}`,
+              borderRadius: '14px',
+              overflow: 'hidden',
+              marginBottom: '20px',
+              boxShadow: '0 1px 4px rgba(62,82,25,0.06)',
+            }}
+          >
+            <div style={{
+              padding: '14px 20px 12px',
+              borderBottom: `1px solid ${BORDER}`,
+              backgroundColor: SURFACE,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: '12px',
+            }}>
+              <div>
+                <div style={{
+                  fontFamily: "'JetBrains Mono', monospace",
+                  fontSize: '10px',
+                  letterSpacing: '0.1em',
+                  textTransform: 'uppercase',
+                  color: MUTED,
+                  marginBottom: '3px',
+                }}>
+                  Extraction Result
+                </div>
+                <div style={{
+                  fontSize: '13px',
+                  fontWeight: '700',
+                  color: PRIMARY,
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
+                  {result.fileName}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap' }}>
+                <StatChip label="Rooms"       value={result.stats.rooms} />
+                <StatChip label="Doors"       value={result.stats.doors} />
+                <StatChip label="Connections" value={result.stats.edges} />
+              </div>
+            </div>
+
+            <div style={{ padding: '16px 20px' }}>
+              <p style={{
+                margin: '0 0 12px',
+                fontSize: '11px',
+                fontFamily: "'JetBrains Mono', monospace",
+                color: MUTED,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}>
+                Detected Rooms
+              </p>
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+                gap: '8px',
+              }}>
+                {result.nodes
+                  .filter(n => n.type === 'room')
+                  .map(room => (
+                    <div
+                      key={room.id}
+                      style={{
+                        backgroundColor: SURFACE,
+                        border: `1px solid ${BORDER}`,
+                        borderRadius: '8px',
+                        padding: '10px 12px',
+                      }}
+                    >
+                      <div style={{
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        color: PRIMARY,
+                        fontFamily: "'JetBrains Mono', monospace",
+                        marginBottom: '3px',
+                      }}>
+                        {room.name}
+                      </div>
+                      <div style={{
+                        fontSize: '11px',
+                        fontFamily: "'JetBrains Mono', monospace",
+                        color: MUTED,
+                      }}>
+                        {room.area.toFixed(1)} units²
+                      </div>
+                    </div>
+                  ))
+                }
+              </div>
+            </div>
+
+            {/* Edges table */}
+            <div style={{ padding: '16px 20px', borderTop: `1px solid ${BORDER}` }}>
+              <p style={{
+                margin: '0 0 12px',
+                fontSize: '11px',
+                fontFamily: "'JetBrains Mono', monospace",
+                color: MUTED,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}>
+                Path Connections
+              </p>
+
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{
+                  width: '100%',
+                  borderCollapse: 'collapse',
+                  fontSize: '12px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
+                  <thead>
+                    <tr style={{ backgroundColor: SURFACE }}>
+                      {['#', 'From', 'To', 'Distance (units)'].map(h => (
+                        <th key={h} style={{
+                          padding: '8px 12px',
+                          textAlign: 'left',
+                          fontWeight: '700',
+                          color: PRIMARY,
+                          fontSize: '11px',
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.06em',
+                          borderBottom: `1px solid ${BORDER}`,
+                          whiteSpace: 'nowrap',
+                        }}>
+                          {h}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {result.edges.map((edge, i) => (
+                      <tr
+                        key={i}
+                        style={{ borderBottom: `1px solid ${BORDER}` }}
+                        onMouseEnter={e => e.currentTarget.style.backgroundColor = SURFACE}
+                        onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
+                      >
+                        <td style={{ padding: '8px 12px', color: MUTED }}>{i + 1}</td>
+                        <td style={{ padding: '8px 12px', color: '#1b1d0e', fontWeight: '600' }}>
+                          Node {edge.from}
+                        </td>
+                        <td style={{ padding: '8px 12px', color: '#1b1d0e', fontWeight: '600' }}>
+                          Node {edge.to}
+                        </td>
+                        <td style={{ padding: '8px 12px', color: PRIMARY, fontWeight: '700' }}>
+                          {edge.weight.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div style={{
+              padding: '10px 20px',
+              borderTop: `1px solid ${BORDER}`,
+              backgroundColor: SURFACE,
+              fontSize: '11px',
+              fontFamily: "'JetBrains Mono', monospace",
+              color: MUTED,
+            }}>
+              {result.stats.doors} door nodes · {result.stats.edges} path connections
+            </div>
+          </div>
+        ))}
+
       </div>
     </AdminLayout>
   )
@@ -375,6 +554,30 @@ function StatusChip({ label, color, bg }) {
     }}>
       {label}
     </span>
+  )
+}
+
+function StatChip({ label, value }) {
+  return (
+    <div style={{ display: 'flex', alignItems: 'baseline', gap: '5px' }}>
+      <span style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: '18px',
+        fontWeight: '700',
+        color: PRIMARY,
+      }}>
+        {value}
+      </span>
+      <span style={{
+        fontFamily: "'JetBrains Mono', monospace",
+        fontSize: '11px',
+        color: MUTED,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+      }}>
+        {label}
+      </span>
+    </div>
   )
 }
 
