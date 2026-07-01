@@ -28,6 +28,17 @@ export async function updatePlace(id, data) {
     return body
 }
 
+export async function deletePlace(id) {
+    const response = await fetch(`${BASE_URL}/api/admin/places/${id}`, {
+      method: 'DELETE',
+    })
+    const body = await response.json()
+    if (!response.ok || body.status >= 400) {
+      throw new Error(body.message || 'Delete failed')
+    }
+    return body
+  }
+
 export async function uploadDxfFile(file) {
     const formData = new FormData()
     formData.append('file', file)

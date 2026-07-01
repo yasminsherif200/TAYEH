@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import AdminLayout from './AdminLayout'
-import { getPlaces, getPlaceById, updatePlace } from '../../services/adminApi'
+import { getPlaces, getPlaceById, updatePlace, deletePlace } from '../../services/adminApi'
 import { createPortal } from 'react-dom'
 
 const PRIMARY = '#3e5219'
@@ -61,7 +61,7 @@ const STYLES = `
   }
 `
 
-function ActionMenu({ onView, onEdit }) {
+function ActionMenu({ onView, onEdit, onDelete, deleting }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -77,6 +77,7 @@ function ActionMenu({ onView, onEdit }) {
     <div ref={ref} style={{ position: 'relative' }}>
       <button
         onClick={() => setOpen(o => !o)}
+        disabled={deleting}
         style={{
           background: 'none',
           border: `1px solid ${BORDER}`,
@@ -84,21 +85,23 @@ function ActionMenu({ onView, onEdit }) {
           padding: '4px 10px',
           fontSize: '10px',
           cursor: 'pointer',
-          color: MUTED,
+          color: deleting ? MUTED : MUTED,
           fontFamily: "'JetBrains Mono', monospace",
           transition: 'all 0.15s',
           letterSpacing: '0.1em',
+          opacity: deleting ? 0.5 : 1,
         }}
-        onMouseEnter={e => {
-          e.currentTarget.style.backgroundColor = SURFACE
-          e.currentTarget.style.borderColor = PRIMARY
+        onMouseEnter={e => { if (!deleting){
+            e.currentTarget.style.backgroundColor = SURFACE
+            e.currentTarget.style.borderColor = PRIMARY
+          }
         }}
         onMouseLeave={e => {
           e.currentTarget.style.backgroundColor = 'transparent'
           e.currentTarget.style.borderColor = BORDER
         }}
       >
-        ...
+        {deleting ? '…' : '•••'}
       </button>
 
       {open && (
@@ -117,7 +120,7 @@ function ActionMenu({ onView, onEdit }) {
           {[
             { label: 'View',   action: () => { onView();  setOpen(false) }, color: PRIMARY },
             { label: 'Edit',   action: () => { onEdit();  setOpen(false) }, color: MUTED   },
-            { label: 'Delete', action: () => {            setOpen(false) }, color: '#c0392b' },
+            { label: 'Delete', action: () => { onDelete(); setOpen(false) }, color: '#c0392b' },
           ].map(({ label, action, color }) => (
             <button
               key={label}
@@ -881,6 +884,20 @@ export default function Places() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId]     = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this place? This cannot be undone.')) return
+    setDeletingId(id)
+    try {
+      await deletePlace(id)
+      setData(prev => prev.filter(p => p.id !== id))
+    } catch (err) {
+      alert(err.message || 'Delete failed')
+    } finally {
+      setDeletingId(null)
+    }
+  }
 
   useEffect(() => {
     setLoading(true)
@@ -1146,6 +1163,8 @@ export default function Places() {
                   <ActionMenu
                     onView={() => setSelectedId(place.id)}
                     onEdit={() => setEditingId(place.id)}
+                    onDelete={() => handleDelete(place.id)}
+                    deleting={deletingId === place.id}
                   />
                 </div>
               )
