@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import AdminLayout from './AdminLayout'
-import { getPlaces, getPlaceById } from '../../services/adminApi'
+import { getPlaces, getPlaceById, updatePlace } from '../../services/adminApi'
 import { createPortal } from 'react-dom'
 
 const PRIMARY = '#3e5219'
@@ -61,7 +61,7 @@ const STYLES = `
   }
 `
 
-function ActionMenu({ onView }) {
+function ActionMenu({ onView, onEdit }) {
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
 
@@ -116,7 +116,7 @@ function ActionMenu({ onView }) {
         }}>
           {[
             { label: 'View',   action: () => { onView();  setOpen(false) }, color: PRIMARY },
-            { label: 'Edit',   action: () => {            setOpen(false) }, color: MUTED   },
+            { label: 'Edit',   action: () => { onEdit();  setOpen(false) }, color: MUTED   },
             { label: 'Delete', action: () => {            setOpen(false) }, color: '#c0392b' },
           ].map(({ label, action, color }) => (
             <button
@@ -508,7 +508,7 @@ function PlaceModal({ placeId, onClose }) {
                 </div>
               )}
 
-              {/* Transportation points */}
+              {/* Transportation points
               {data.transportation_points?.length > 0 && (
                 <div>
                   <p style={{
@@ -537,7 +537,7 @@ function PlaceModal({ placeId, onClose }) {
                     ))}
                   </div>
                 </div>
-              )}
+              )} */}
 
               {/* Footer with weighted score */}
               {data.weighted_score != null && (
@@ -576,6 +576,301 @@ function PlaceModal({ placeId, onClose }) {
   )
 }
 
+function EditModal({ placeId, onClose, onSaved }) {
+  const [original, setOriginal] = useState(null)
+  const [form, setForm]         = useState(null)
+  const [loading, setLoading]   = useState(true)
+  const [saving, setSaving]     = useState(false)
+  const [error, setError]       = useState(null)
+  const [success, setSuccess]   = useState(false)
+
+  useEffect(() => {
+    getPlaceById(placeId)
+      .then(res => {
+        if (res.status === 200) {
+          setOriginal(res.data)
+          setForm({
+            name:           res.data.name           ?? '',
+            type:           res.data.type           ?? '',
+            description:    res.data.description    ?? '',
+            zone:           res.data.zone           ?? '',
+            latitude:       res.data.latitude       ?? '',
+            longitude:      res.data.longitude      ?? '',
+            rating:         res.data.rating         ?? '',
+            weighted_score: res.data.weighted_score ?? '',
+            reviews_count:  res.data.reviews_count  ?? '',
+          })
+        } else {
+          setError('Could not load place.')
+        }
+      })
+      .catch(() => setError('Could not reach the server.'))
+      .finally(() => setLoading(false))
+
+    const onKey = (e) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [placeId])
+
+  const handleSubmit = async () => {
+    setSaving(true)
+    setError(null)
+    try {
+      if (form.rating !== '' && (Number(form.rating) < 0 || Number(form.rating) > 5)) {
+        setError('Rating must be between 0 and 5.')
+        return
+      }
+      if (form.latitude !== '' && (Number(form.latitude) < -90 || Number(form.latitude) > 90)) {
+        setError('Latitude must be between -90 and 90.')
+        return
+      }
+      if (form.longitude !== '' && (Number(form.longitude) < -180 || Number(form.longitude) > 180)) {
+        setError('Longitude must be between -180 and 180.')
+        return
+      }
+      if (form.reviews_count !== '' && Number(form.reviews_count) < 0) {
+        setError('Reviews count must be 0 or more.')
+        return
+      }
+
+      setSaving(true)
+      setError(null)
+
+      const payload = {}
+
+      // strings
+      if (form.name        !== '') payload.name        = form.name
+      if (form.type        !== '') payload.type        = form.type
+      if (form.description !== '') payload.description = form.description
+      if (form.zone        !== '') payload.zone        = String(form.zone)
+
+      // numbers
+      if (form.latitude       !== '') payload.latitude       = Number(form.latitude)
+      if (form.longitude      !== '') payload.longitude      = Number(form.longitude)
+      if (form.rating         !== '') payload.rating         = Number(form.rating)
+      if (form.weighted_score !== '') payload.weighted_score = Number(form.weighted_score)
+      if (form.reviews_count  !== '') payload.reviews_count  = parseInt(form.reviews_count, 10)
+
+      await updatePlace(placeId, payload)
+      setSuccess(true)
+      setTimeout(() => onSaved(), 800)
+    } catch (err) {
+      setError(err.message || 'Update failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const Field = ({ label, name, type = 'text', inputMode }) => (
+    <div style={{ marginBottom: '14px' }}>
+      <label style={{
+        display: 'block',
+        fontSize: '11px',
+        fontFamily: "'JetBrains Mono', monospace",
+        color: MUTED,
+        textTransform: 'uppercase',
+        letterSpacing: '0.08em',
+        marginBottom: '5px',
+      }}>
+        {label}
+      </label>
+      <input
+        type={type}
+        {...(inputMode ? { inputMode } : {})} 
+        value={form[name]}
+        onChange={e => setForm(prev => ({ ...prev, [name]: e.target.value }))}
+        style={{
+          width: '100%',
+          boxSizing: 'border-box',
+          padding: '9px 12px',
+          fontSize: '13px',
+          fontFamily: "'Manrope', sans-serif",
+          border: `1px solid ${BORDER}`,
+          borderRadius: '8px',
+          outline: 'none',
+          color: '#1b1d0e',
+          backgroundColor: '#fff',
+          transition: 'border-color 0.15s',
+        }}
+        onFocus={e => e.target.style.borderColor = PRIMARY}
+        onBlur={e => e.target.style.borderColor = BORDER}
+      />
+    </div>
+  )
+
+  return (
+    <>
+      <div
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0,
+          backgroundColor: 'rgba(26,36,16,0.5)',
+          zIndex: 400, backdropFilter: 'blur(2px)',
+        }}
+      />
+      <div style={{
+        position: 'fixed',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%', maxWidth: '520px',
+        maxHeight: '85vh',
+        backgroundColor: '#fff',
+        borderRadius: '16px',
+        zIndex: 401,
+        overflowY: 'auto',
+        boxShadow: '0 20px 60px rgba(26,36,16,0.25)',
+        animation: 'modalIn 0.2s ease',
+      }}>
+
+        {/* Header */}
+        <div style={{
+          padding: '20px 24px 16px',
+          borderBottom: `1px solid ${BORDER}`,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          position: 'sticky', top: 0,
+          backgroundColor: '#fff', zIndex: 1,
+        }}>
+          <div>
+            <div style={{
+              fontSize: '11px',
+              fontFamily: "'JetBrains Mono', monospace",
+              color: MUTED,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: '3px',
+            }}>
+              Edit Place
+            </div>
+            <h2 style={{
+              margin: 0, fontSize: '17px',
+              fontWeight: '700', color: '#1b1d0e',
+            }}>
+              {loading ? '...' : original?.name}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            style={{
+              background: 'none', border: 'none',
+              cursor: 'pointer', fontSize: '20px',
+              color: MUTED, padding: '2px 6px',
+              borderRadius: '6px', lineHeight: 1,
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: '20px 24px 24px' }}>
+          {loading ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              {[...Array(6)].map((_, i) => <Skel key={i} height="38px" delay={i * 0.05} />)}
+            </div>
+          ) : error && !form ? (
+            <div style={{ color: '#c00', fontSize: '13px', fontFamily: "'JetBrains Mono', monospace" }}>
+              ⚠️ {error}
+            </div>
+          ) : form && (
+            <>
+              <Field label="Name"           name="name" />
+              <Field label="Type"           name="type" />
+              <Field label="Description"    name="description" />
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}><Field label="Latitude (-90 to 90)" name="latitude" type="text" inputMode="decimal" /></div>
+                <div style={{ flex: 1 }}><Field label="Longitude (-180 to 180)" name="longitude" type="text" inputMode="decimal" /></div>
+              </div>
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ flex: 1 }}><Field label="Zone" name="zone" type="text" /></div>
+                <div style={{ flex: 1 }}><Field label="Rating (0–5)" name="rating" type="text" inputMode="decimal" /></div>
+                <div style={{ flex: 1 }}><Field label="Reviews Count" name="reviews_count" type="text" inputMode="numeric" /></div>
+              </div>
+              <Field label="Weighted Score" name="weighted_score" type="text" inputMode="decimal" />
+
+              {error && (
+                <div style={{
+                  padding: '10px 14px',
+                  backgroundColor: '#fdf0ef',
+                  border: '1px solid #fcc',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  color: '#c00',
+                  marginBottom: '14px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
+                  ⚠️ {error}
+                </div>
+              )}
+
+              {success && (
+                <div style={{
+                  padding: '10px 14px',
+                  backgroundColor: '#eaf6ec',
+                  border: '1px solid #b2dfbc',
+                  borderRadius: '8px',
+                  fontSize: '13px',
+                  color: '#2d7a3a',
+                  marginBottom: '14px',
+                  fontFamily: "'JetBrains Mono', monospace",
+                }}>
+                  ✓ Saved successfully
+                </div>
+              )}
+
+              {/* Footer */}
+              <div style={{
+                display: 'flex',
+                justifyContent: 'flex-end',
+                gap: '10px',
+                marginTop: '4px',
+              }}>
+                <button
+                  onClick={onClose}
+                  style={{
+                    padding: '9px 18px',
+                    borderRadius: '8px',
+                    border: `1px solid ${BORDER}`,
+                    background: 'none',
+                    fontSize: '13px',
+                    fontFamily: "'Manrope', sans-serif",
+                    color: MUTED,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving || success}
+                  style={{
+                    padding: '9px 20px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    backgroundColor: success ? '#2d7a3a' : saving ? SURFACE : PRIMARY,
+                    color: saving ? MUTED : '#fff',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    fontFamily: "'Manrope', sans-serif",
+                    cursor: saving || success ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.15s',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                  }}
+                >
+                  {saving ? 'Saving…' : success ? '✓ Saved' : 'Save changes'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function Places() {
   const [data, setData]             = useState([])
   const [meta, setMeta]             = useState(null)
@@ -585,6 +880,7 @@ export default function Places() {
   const [sort, setSort]             = useState('desc')
   const [typeFilter, setTypeFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
+  const [editingId, setEditingId]     = useState(null)
 
   useEffect(() => {
     setLoading(true)
@@ -624,6 +920,22 @@ export default function Places() {
         <PlaceModal
           placeId={selectedId}
           onClose={() => setSelectedId(null)}
+        />,
+        document.body
+      )}
+
+      {editingId && createPortal(        
+        <EditModal
+          placeId={editingId}
+          onClose={() => setEditingId(null)}
+          onSaved={() => {
+            setEditingId(null)
+            setLoading(true)
+            getPlaces({ page, sort })
+              .then(res => { setData(res.data); setMeta(res.meta) })
+              .catch(() => setError('Could not reach the server.'))
+              .finally(() => setLoading(false))
+          }}
         />,
         document.body
       )}
@@ -833,6 +1145,7 @@ export default function Places() {
                   {/* Actions */}
                   <ActionMenu
                     onView={() => setSelectedId(place.id)}
+                    onEdit={() => setEditingId(place.id)}
                   />
                 </div>
               )

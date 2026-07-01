@@ -15,6 +15,19 @@ export async function getPlaceById(id) {
     return response.json()
 }
 
+export async function updatePlace(id, data) {
+    const response = await fetch(`${BASE_URL}/api/admin/places/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    })
+    const body = await response.json()
+    if (!response.ok || body.status >= 400) {
+      throw new Error(body.message || 'Update failed')
+    }
+    return body
+}
+
 export async function uploadDxfFile(file) {
     const formData = new FormData()
     formData.append('file', file)
