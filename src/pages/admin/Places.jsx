@@ -150,6 +150,114 @@ function ActionMenu({ onView, onEdit, onDelete, deleting }) {
   )
 }
 
+function ConfirmModal({ message, onConfirm, onCancel, loading }) {
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onCancel() }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  return (
+    <>
+      <div
+        onClick={onCancel}
+        style={{
+          position: 'fixed', inset: 0,
+          backgroundColor: 'rgba(26,36,16,0.5)',
+          zIndex: 400, backdropFilter: 'blur(2px)',
+        }}
+      />
+      <div style={{
+        position: 'fixed',
+        top: '50%', left: '50%',
+        transform: 'translate(-50%, -50%)',
+        width: '90%', maxWidth: '400px',
+        backgroundColor: '#fff',
+        borderRadius: '16px',
+        zIndex: 401,
+        boxShadow: '0 20px 60px rgba(26,36,16,0.25)',
+        animation: 'modalIn 0.2s ease',
+        padding: '28px 24px 24px',
+      }}>
+        {/* Icon */}
+        <div style={{
+          width: '44px', height: '44px',
+          borderRadius: '12px',
+          backgroundColor: '#fdf0ef',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '22px',
+          marginBottom: '16px',
+        }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c0392b" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6"/>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+            <path d="M10 11v6"/>
+            <path d="M14 11v6"/>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/>
+          </svg>
+        </div>
+
+        <h3 style={{
+          margin: '0 0 8px',
+          fontSize: '16px',
+          fontWeight: '700',
+          color: '#1b1d0e',
+        }}>
+          Delete Place
+        </h3>
+        <p style={{
+          margin: '0 0 24px',
+          fontSize: '13px',
+          color: MUTED,
+          lineHeight: '1.6',
+          fontFamily: "'JetBrains Mono', monospace",
+        }}>
+          {message}
+        </p>
+
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <button
+            onClick={onCancel}
+            disabled={loading}
+            style={{
+              padding: '9px 18px',
+              borderRadius: '8px',
+              border: `1px solid ${BORDER}`,
+              background: 'none',
+              fontSize: '13px',
+              fontFamily: "'Manrope', sans-serif",
+              color: MUTED,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              opacity: loading ? 0.5 : 1,
+            }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={loading}
+            style={{
+              padding: '9px 20px',
+              borderRadius: '8px',
+              border: 'none',
+              backgroundColor: loading ? '#e8c4c0' : '#c0392b',
+              color: '#fff',
+              fontSize: '13px',
+              fontWeight: '600',
+              fontFamily: "'Manrope', sans-serif",
+              cursor: loading ? 'not-allowed' : 'pointer',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              transition: 'background 0.15s',
+            }}
+          >
+            {loading ? 'Deleting…' : 'Yes, delete'}
+          </button>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function Skel({ width = '100%', height = '40px', delay = 0, s }) {
   return (
     <div style={{
@@ -884,14 +992,16 @@ export default function Places() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId]     = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null) 
   const [deletingId, setDeletingId] = useState(null)
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this place? This cannot be undone.')) return
-    setDeletingId(id)
+  const handleDelete = async () => {
+    if (!confirmDelete) return
+    setDeletingId(confirmDelete.id)
     try {
-      await deletePlace(id)
-      setData(prev => prev.filter(p => p.id !== id))
+      await deletePlace(confirmDelete.id)
+      setData(prev => prev.filter(p => p.id !== confirmDelete.id))
+      setConfirmDelete(null)
     } catch (err) {
       alert(err.message || 'Delete failed')
     } finally {
@@ -953,6 +1063,16 @@ export default function Places() {
               .catch(() => setError('Could not reach the server.'))
               .finally(() => setLoading(false))
           }}
+        />,
+        document.body
+      )}
+
+      {confirmDelete && createPortal(
+        <ConfirmModal
+          message={`"${confirmDelete.name}" will be permanently deleted and cannot be recovered.`}
+          loading={!!deletingId}
+          onConfirm={handleDelete}
+          onCancel={() => { if (!deletingId) setConfirmDelete(null) }}
         />,
         document.body
       )}
@@ -1163,7 +1283,7 @@ export default function Places() {
                   <ActionMenu
                     onView={() => setSelectedId(place.id)}
                     onEdit={() => setEditingId(place.id)}
-                    onDelete={() => handleDelete(place.id)}
+                    onDelete={() => setConfirmDelete(place)}
                     deleting={deletingId === place.id}
                   />
                 </div>
